@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Oligart Prospect — Mission Control</title>
+  <meta name="description" content="Copilote de prospection Oligart : pipeline, relances, messages et signaux de recrutement." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Manrope:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="noise"></div>
+  <aside class="sidebar">
+    <div class="brand"><span class="brand-mark">O</span><div><strong>OLIGART</strong><small>PROSPECT</small></div></div>
+    <nav>
+      <button class="nav active" data-view="dashboard">Vue d’ensemble</button>
+      <button class="nav" data-view="pipeline">Pipeline</button>
+      <button class="nav" data-view="today">Priorités du jour</button>
+      <button class="nav" data-view="jobs">Recrutements</button>
+      <button class="nav" data-view="discovery">Discovery</button>
+      <button class="nav" data-view="opportunities">Opportunités pour moi</button>
+      <button class="nav" data-view="activity">Activité</button>
+    </nav>
+    <div class="sidebar-bottom">
+      <button id="importBtn" class="ghost full">Importer CSV</button>
+      <button id="exportBtn" class="ghost full">Exporter CSV</button>
+      <button id="backupBtn" class="ghost full">Sauvegarde JSON</button>
+      <button id="settingsBtn" class="ghost full">Paramètres email</button>
+      <input id="csvInput" type="file" accept=".csv" hidden />
+      <p id="cloudStatus" class="cloud-status">Connexion Supabase…</p>
+    </div>
+  </aside>
+
+  <main>
+    <header class="topbar">
+      <div><p class="eyebrow">MISSION CONTROL</p><h1 id="pageTitle">Vue d’ensemble</h1></div>
+      <div class="top-actions"><button id="addBtn" class="primary">+ Ajouter une entreprise</button></div>
+    </header>
+
+    <section id="dashboard" class="view active">
+      <div class="hero-card">
+        <div><p class="eyebrow">OBJECTIF</p><h2>Transformer 30 minutes par jour<br>en conversations qualifiées.</h2></div>
+        <div class="hero-score"><span id="focusCount">0</span><small>actions prioritaires</small></div>
+      </div>
+      <div class="metrics" id="metrics"></div>
+      <div class="grid two">
+        <article class="panel"><div class="panel-head"><h3>À faire aujourd’hui</h3><button class="text-btn" data-jump="today">Tout voir</button></div><div id="todayList"></div></article>
+        <article class="panel"><div class="panel-head"><h3>Pipeline</h3><span class="muted">par statut</span></div><div id="funnel"></div></article>
+      </div>
+      <article class="panel"><div class="panel-head"><h3>Meilleures opportunités</h3><button class="text-btn" data-jump="pipeline">Ouvrir le pipeline</button></div><div id="topTable"></div></article>
+    </section>
+
+    <section id="pipeline" class="view">
+      <div class="toolbar">
+        <input id="search" class="input" placeholder="Rechercher une entreprise, un secteur…" />
+        <select id="statusFilter" class="input"><option value="">Tous les statuts</option></select>
+        <select id="priorityFilter" class="input"><option value="">Toutes les priorités</option><option>A</option><option>B</option><option>C</option></select>
+        <div class="view-toggle"><button id="kanbanMode" class="mini accent">Colonnes</button><button id="tableMode" class="mini">Tableau</button></div>
+      </div>
+      <div id="kanbanBoard" class="kanban-board"></div>
+      <div id="pipelineTablePanel" class="panel table-panel hidden"><div id="pipelineTable"></div></div>
+    </section>
+
+    <section id="today" class="view"><div class="panel"><div class="panel-head"><h3>Les actions qui peuvent produire une mission</h3><span class="muted">triées par urgence et potentiel</span></div><div id="todayFull"></div></div></section>
+
+    <section id="jobs" class="view">
+      <div class="panel intro"><div class="panel-head"><div><h3>Signaux de recrutement</h3><p>Analyse les pages Greenhouse et Lever publiques. Les postes Sales, Growth, Marketing, Partnerships ou France augmentent le score.</p></div><button id="scanAllJobs" class="primary">Analyser toutes les URLs</button></div></div>
+      <div id="jobsSummary" class="metrics compact"></div>
+      <div id="jobsGrid" class="cards"></div>
+    </section>
+
+    <section id="discovery" class="view">
+      <div class="panel intro"><div class="panel-head"><div><h3>Discovery hebdomadaire</h3><p>Veille réelle sur des flux publics : levées, recrutements, expansions, AdTech/MarTech et marques B2C. Mise à jour automatique chaque lundi.</p></div><div class="inline-actions"><button id="refreshDiscovery" class="mini">Actualiser maintenant</button><button id="addAllDiscovery" class="primary">Ajouter les cibles A</button></div></div></div>
+      <div class="toolbar"><input id="discoverySearch" class="input" placeholder="Rechercher dans les suggestions…"><select id="discoveryModel" class="input"><option value="">Tous les modèles</option><option>B2B</option><option>B2C</option><option>B2B/B2C</option></select></div>
+      <div id="discoveryGrid" class="cards discovery-grid"></div>
+    </section>
+
+
+    <section id="opportunities" class="view">
+      <div class="panel intro"><div class="panel-head"><div><p class="eyebrow">MEDIA · TECH · INTERNET</p><h3>Opportunités correspondant à ton profil</h3><p>Recherche des postes de Country Manager, General Manager, VP Sales, CRO, Head of Sales, Partnerships ou direction commerciale. Les résultats viennent de job boards publics et renvoient toujours vers l’annonce d’origine.</p></div><button id="refreshOpportunities" class="primary">Rechercher maintenant</button></div></div>
+      <div class="opportunity-profile panel"><div><strong>Profil recherché</strong><p class="muted">Direction France · Sales leadership · Go-to-market · AdTech/MarTech · Média · Marketplace · Internet</p></div><div id="cvBadge" class="badge">CV non chargé</div></div>
+      <div class="toolbar"><input id="opportunitySearch" class="input" placeholder="Entreprise, poste ou mot-clé…"><select id="opportunityLocation" class="input"><option value="">Toutes localisations</option><option value="france">France</option><option value="paris">Paris</option><option value="remote">Remote</option><option value="europe">Europe</option></select><select id="opportunityLevel" class="input"><option value="">Tous les scores</option><option value="80">Très pertinent ≥ 80</option><option value="65">Pertinent ≥ 65</option></select></div>
+      <div id="opportunitiesMetrics" class="metrics compact"></div>
+      <div id="opportunitiesGrid" class="cards opportunity-grid"></div>
+    </section>
+
+    <section id="activity" class="view">
+      <div class="panel"><div class="panel-head"><div><h3>Historique d’activité</h3><p class="muted">Emails, changements de statut, imports et analyses.</p></div><button id="clearActivity" class="mini">Vider l’historique</button></div><div id="activityList"></div></div>
+    </section>
+  </main>
+
+  <div id="drawer" class="drawer"><div class="drawer-backdrop" data-close></div><div class="drawer-panel"><button class="drawer-close" data-close>×</button><div id="drawerContent"></div></div></div>
+  <div id="modal" class="modal"><div class="modal-backdrop" data-modal-close></div><form id="companyForm" class="modal-card"><button type="button" class="drawer-close" data-modal-close>×</button><p class="eyebrow">NOUVEAU PROSPECT</p><h2>Ajouter une entreprise</h2><div class="form-grid">
+    <label>Entreprise<input required name="company" class="input"></label><label>Secteur<input name="sector" class="input"></label>
+    <label>Site<input name="website" class="input" placeholder="https://..."></label><label>Décideur<input name="contact" class="input" placeholder="CEO / CRO / CMO"></label>
+    <label>Email du contact<input type="email" name="contactEmail" class="input" placeholder="prenom@entreprise.com"></label><label>Profil LinkedIn<input name="linkedinUrl" class="input" placeholder="https://www.linkedin.com/in/..."></label>
+    <label>Modèle<select name="model" class="input"><option>B2B</option><option>B2C</option><option>B2B/B2C</option></select></label><label>Priorité<select name="priority" class="input"><option>A</option><option>B</option><option>C</option></select></label>
+    <label class="wide">Pourquoi Oligart est pertinent<textarea name="why" class="input" rows="3"></textarea></label>
+    <label class="wide">URL careers / Greenhouse / Lever<input name="jobsUrl" class="input" placeholder="https://boards.greenhouse.io/... ou https://jobs.lever.co/..."></label>
+  </div><button class="primary full">Créer la fiche</button></form></div>
+  <div id="settingsModal" class="modal"><div class="modal-backdrop" data-settings-close></div><div class="modal-card"><button type="button" class="drawer-close" data-settings-close>×</button><p class="eyebrow">MESSAGERIE OLIGART</p><h2>Connexion email</h2><div class="mail-status" id="mailStatus"></div><div class="form-grid"><label>Adresse d’envoi<input id="smtpFrom" class="input" value="rodolph.menten@oligart.fr" disabled></label><label>Serveur SMTP<input class="input" value="mail.gandi.net" disabled></label><label>Port<input class="input" value="465 (SSL)" disabled></label><label>Mode<select id="mailMode" class="input"><option value="airmail">Ouvrir dans Airmail</option><option value="smtp">Envoyer directement via Netlify</option></select></label></div><div class="security-note"><strong>Sécurité</strong><p>Le mot de passe n’est jamais enregistré dans le navigateur ni dans le code. Pour l’envoi direct, ajoute SMTP_USER et SMTP_PASS dans les variables d’environnement Netlify.</p></div><div class="cv-settings"><strong>Candidatures</strong><p class="muted">Charge ton CV au format PDF. Il reste dans ce navigateur et sera joint uniquement aux emails que tu décides d’envoyer.</p><label class="upload-zone">CV PDF<input id="cvInput" type="file" accept="application/pdf" hidden><span id="cvFileName">Choisir le CV</span></label><button id="removeCv" class="mini" type="button">Retirer le CV</button></div><div class="inline-actions"><button id="saveMailSettings" class="primary" type="button">Enregistrer</button><button id="testMail" class="mini" type="button">Tester la connexion</button></div></div></div>
+  <div id="toast" class="toast"></div>
+  <script src="app.js"></script>
+</body>
+</html>
