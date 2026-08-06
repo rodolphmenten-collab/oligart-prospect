@@ -19,6 +19,7 @@
     <button class="nav" data-view="outreach">Outreach</button>
     <button class="nav" data-view="radar">Radar Marché</button>
     <button class="nav" data-view="career">Opportunités Carrière</button>
+    <button class="nav" data-view="settings">Paramètres</button>
   </nav>
   <div class="side-bottom">
     <button id="exportBtn" class="btn secondary">Exporter CSV</button>
@@ -63,9 +64,30 @@
   <div id="careerList"></div>
  </div>
 </section>
+<section id="settings" class="view">
+ <div class="two-col">
+  <article class="panel">
+   <div class="panel-head"><h3>Signature & liens</h3><span class="muted">Utilisés pour tes générations et messages</span></div>
+   <form id="settingsForm" class="detail-grid">
+    <label>Nom<input id="sName" placeholder="Rodolph Menten"></label>
+    <label>Titre<input id="sTitle" placeholder="Fondateur, Oligart"></label>
+    <label>Email de contact<input id="sEmail" type="email" placeholder="contact@oligart-agency.com"></label>
+    <label>Téléphone<input id="sPhone" placeholder="+33..."></label>
+    <label class="wide">Portfolio<input id="sPortfolio" placeholder="https://..."></label>
+    <label class="wide">CV (lien)<input id="sCv" placeholder="https://..."></label>
+    <div class="actions wide"><button type="submit" class="btn primary">Enregistrer</button></div>
+   </form>
+  </article>
+  <article class="panel">
+   <div class="panel-head"><h3>Intégrations</h3><span class="muted">Configurées côté Netlify (variables d'environnement)</span></div>
+   <div id="integrationStatus" class="detail-grid"></div>
+   <p class="muted" style="margin-top:14px">SMTP : <code>SMTP_HOST</code>, <code>SMTP_PORT</code>, <code>SMTP_SECURE</code>, <code>SMTP_USER</code>, <code>SMTP_PASS</code>.<br>Assistant IA : <code>ANTHROPIC_API_KEY</code> (modèle via <code>ANTHROPIC_MODEL</code>, optionnel).<br>Ces valeurs ne transitent jamais côté client — seul un statut booléen est affiché ici.</p>
+  </article>
+ </div>
+</section>
 </main></div>
 <div id="drawer" class="drawer"><div class="backdrop" data-close></div><div class="drawer-panel"><button class="close" data-close>×</button><div id="drawerBody"></div></div></div>
 <div id="modal" class="modal"><div class="backdrop" data-close-modal></div><form id="addForm" class="modal-card"><button class="close" type="button" data-close-modal>×</button><p class="eyebrow">NOUVEAU PROSPECT</p><h2>Ajouter une entreprise</h2><label>Entreprise<input name="company" required></label><label>Secteur<input name="sector"></label><label>Site web<input name="website" placeholder="https://..."></label><label>Décideur cible<input name="targetRole" value="CEO / CRO"></label><label>Priorité<select name="priority"><option>A</option><option>B</option><option>C</option></select></label><button class="btn primary" type="submit">Ajouter</button></form></div>
 <div id="toast" class="toast"></div>
-<script src="data.js?v=clean-1"></script><script src="app.js?v=clean-1"></script><script src="priorities.js?v=clean-1"></script><script src="outreach.js?v=clean-1"></script><script src="radar.js?v=clean-1"></script><script src="career.js?v=clean-1"></script><script src="ai.js?v=clean-1"></script>
+<script src="data.js?v=clean-1"></script><script src="app.js?v=clean-1"></script><script src="priorities.js?v=clean-1"></script><script src="outreach.js?v=clean-1"></script><script src="radar.js?v=clean-1"></script><script src="career.js?v=clean-1"></script><script src="ai.js?v=clean-1"></script><script src="settings.js?v=clean-1"></script>
 </body></html>
