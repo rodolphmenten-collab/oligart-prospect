@@ -17,7 +17,7 @@ explicite) si une donnée manque ou qu'un appel réseau échoue.**
 
 1. **Dashboard** — métriques clés, relances dues, opportunités carrière (pipeline),
    activité récente (fusion outreach + signaux marché).
-2. **Base prospects** — 250 entreprises (objectif 300-400, en cours d'extension
+2. **Base prospects** — 248 entreprises (objectif 300-400, en cours d'extension
    par lots vérifiés), avec CEO, Head of Sales, LinkedIn,
    email professionnel (quand disponible), site, notes, timeline de contacts,
    statut de pipeline. Couvre média/tech/internet/influence/entertainment
