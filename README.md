@@ -23,12 +23,18 @@ explicite) si une donnée manque ou qu'un appel réseau échoue.**
 3. **Top Priorités** — les 30 entreprises au score le plus élevé.
 4. **Outreach** — séquence multi-canal (Email → LinkedIn → Relance email → Téléphone),
    historique de contact par prospect, hub listant les actions dues.
-5. **Radar Marché** — journal de signaux (levée de fonds, recrutement, nouveau
-   pays, changement de CEO/CRO) loggués manuellement par Rodolph et centralisés,
-   filtrables par type. *Aucune donnée n'est inventée : pas d'API financière/emploi
-   connectée à ce stade — c'est un outil de veille structurée, pas un flux "live".*
+5. **Radar Marché** — signaux (levée de fonds, recrutement, nouveau
+   pays, changement de CEO/CRO). Deux sources fusionnées :
+   - manuelle : Rodolph loggue ce qu'il repère depuis une fiche prospect
+   - **automatique** : un scan planifié quotidien (fonction Netlify + API
+     Anthropic avec recherche web réelle) parcourt les 200 prospects par
+     lots et enrichit le radar tout seul, stocké centralement (visible
+     depuis n'importe quel appareil, pas juste en local)
 6. **Opportunités carrière** — suivi des postes en veille (VP Sales, GM, Country
-   Manager, CRO, Head of Sales), avec statut, source, lien, notes.
+   Manager, CRO, Head of Sales), avec statut, source, lien, notes. Un scan
+   automatique quotidien propose aussi des offres détectées sur le web ;
+   Rodolph choisit de les ajouter à son pipeline ou de les ignorer — rien
+   n'est ajouté sans action explicite de sa part.
 7. **Assistant IA** — génération de brouillons (email, DM LinkedIn, pitch,
    préparation de RDV, compte rendu) depuis la fiche prospect. Toujours
    éditable. **Repli local automatique** si l'IA n'est pas configurée ou
@@ -55,6 +61,17 @@ netlify/functions/
   send-email.js       Envoi SMTP (existant)
   generate.js          Génération IA (Anthropic API)
   status.js            Statut booléen des intégrations (aucun secret exposé)
+  _companies.json       Copie allégée des 200 prospects (id/company/secteur/pays),
+                        utilisée uniquement côté serveur par les scans
+  _scan-lib.js          Logique de scan partagée (radar + carrière), testable
+                        indépendamment de Netlify Blobs
+  _store.js              Adaptateur Netlify Blobs (stockage centralisé)
+  scan-radar-background.js   Scan quotidien planifié — Radar Marché
+  scan-career-background.js  Scan quotidien planifié — Opportunités Carrière
+  scan-trigger.js            Déclenchement manuel des deux scans (bouton
+                              Paramètres), limité à 1 fois / 10 min
+  radar-data.js               Lecture des signaux détectés automatiquement
+  career-data.js               Lecture des suggestions carrière détectées
 ```
 
 Chaque module additionnel (`priorities.js`, `outreach.js`, `radar.js`,
@@ -79,6 +96,41 @@ Sans `ANTHROPIC_API_KEY`, l'assistant IA fonctionne quand même : il bascule
 automatiquement sur des modèles de texte générés localement (moins riches,
 mais toujours utilisables), et l'indique clairement dans l'interface.
 
+## Veille automatique quotidienne (Radar Marché + Opportunités Carrière)
+
+Deux fonctions planifiées (cron) tournent chaque jour sans intervention :
+
+- **`scan-radar-background`** (6h00 UTC) — scanne un lot de ~5 entreprises
+  parmi les 200 (réglable via `RADAR_SCAN_BATCH_SIZE`), cherche sur le web
+  (levée de fonds, recrutement, expansion, changement CEO/CRO) via l'API
+  Anthropic, et stocke les signaux trouvés. Rotation complète des 200
+  entreprises en ~40 jours avec le réglage par défaut.
+- **`scan-career-background`** (6h10 UTC) — cherche des offres récentes pour
+  VP Sales / GM / Country Manager / CRO / Head of Sales, stocke des
+  suggestions (jamais ajoutées directement au pipeline de Rodolph).
+
+Le stockage est centralisé via **Netlify Blobs** (inclus, aucune variable
+d'environnement supplémentaire à configurer, aucune base de données externe).
+Un bouton **"Lancer un scan maintenant"** dans Paramètres permet de
+déclencher les deux scans à la demande (limité à 1 fois toutes les 10
+minutes pour maîtriser le coût API).
+
+**Important — honnêteté sur les données** : ces scans utilisent une
+recherche web réelle. Si rien de fiable n'est trouvé pour une entreprise, il
+n'y a *aucune* donnée inventée à la place. Chaque signal détecté automatiquement
+est marqué « · auto » dans l'interface pour le distinguer d'un signal loggué
+manuellement.
+
+**Coût** : chaque scan consomme des tokens API (recherche web incluse). Avec
+les réglages par défaut, le coût quotidien reste de l'ordre de quelques
+centimes ; ajuster `RADAR_SCAN_BATCH_SIZE` à la baisse réduit encore ce coût.
+
+**Prérequis Netlify** : les fonctions planifiées (« Scheduled Functions »)
+doivent être disponibles sur le plan Netlify utilisé — vérifier dans les
+paramètres du site si les crons apparaissent bien après déploiement. Si ce
+n'est pas le cas, le bouton de déclenchement manuel reste utilisable, et le
+reste de l'app n'est jamais affecté.
+
 ## Données & confidentialité
 
 Toutes les données de prospection restent **sur l'appareil de l'utilisateur**
@@ -88,8 +140,13 @@ ou migrer les données.
 
 ## Limites connues
 
-- Persistance locale uniquement (pas de sync multi-appareils).
+- Persistance des prospects/pipeline personnel/paramètres en local uniquement
+  (pas de sync multi-appareils) ; en revanche, les signaux Radar Marché et
+  suggestions carrière détectés automatiquement, eux, sont bien centralisés
+  (Netlify Blobs) et visibles partout.
 - La fonction `send-email` n'a pas d'authentification applicative : à protéger
   par un token si l'app devient accessible publiquement.
-- Le Radar Marché est un journal manuel, pas un flux connecté à des APIs
-  financières/emploi tierces (aucune n'était disponible pour ce build).
+- Le Radar Marché combine journal manuel et détection automatique — cette
+  dernière dépend de la qualité des résultats de recherche web disponibles
+  au moment du scan, elle peut donc manquer des événements ou en trouver moins
+  certains jours.
