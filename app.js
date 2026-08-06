@@ -83,6 +83,7 @@ window.Oligart={
  messageFor,
  addTimelineEntry,
  addSignal,
+ openProspect,
  registerRenderHook:fn=>{if(typeof fn==='function')window.__oligartRenderHooks.push(fn)}
 };
 })();
