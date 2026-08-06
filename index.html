@@ -18,6 +18,7 @@
     <button class="nav" data-view="today">Relances</button>
     <button class="nav" data-view="outreach">Outreach</button>
     <button class="nav" data-view="radar">Radar Marché</button>
+    <button class="nav" data-view="career">Opportunités Carrière</button>
   </nav>
   <div class="side-bottom">
     <button id="exportBtn" class="btn secondary">Exporter CSV</button>
@@ -48,9 +49,23 @@
  <div class="toolbar"><select id="radarFilter"><option value="">Tous les signaux</option></select></div>
  <div class="panel"><div class="panel-head"><h3>Signaux marché</h3><span class="muted">Levées, recrutements, expansion, changements de direction</span></div><div id="radarList"></div></div>
 </section>
+<section id="career" class="view">
+ <div class="panel">
+  <div class="panel-head"><h3>Postes en veille</h3><button id="careerAddToggle" class="btn secondary">+ Ajouter un poste</button></div>
+  <form id="careerForm" class="detail-grid" style="display:none;margin-bottom:18px">
+   <label>Rôle<select id="cRole"></select></label>
+   <label>Entreprise<input id="cCompany" required></label>
+   <label>Lien de l'offre<input id="cLink" placeholder="https://..."></label>
+   <label>Source<input id="cSource" placeholder="LinkedIn, Welcome to the Jungle..."></label>
+   <label class="wide">Notes<textarea id="cNotes"></textarea></label>
+   <div class="actions wide"><button type="submit" class="btn primary">Enregistrer</button></div>
+  </form>
+  <div id="careerList"></div>
+ </div>
+</section>
 </main></div>
 <div id="drawer" class="drawer"><div class="backdrop" data-close></div><div class="drawer-panel"><button class="close" data-close>×</button><div id="drawerBody"></div></div></div>
 <div id="modal" class="modal"><div class="backdrop" data-close-modal></div><form id="addForm" class="modal-card"><button class="close" type="button" data-close-modal>×</button><p class="eyebrow">NOUVEAU PROSPECT</p><h2>Ajouter une entreprise</h2><label>Entreprise<input name="company" required></label><label>Secteur<input name="sector"></label><label>Site web<input name="website" placeholder="https://..."></label><label>Décideur cible<input name="targetRole" value="CEO / CRO"></label><label>Priorité<select name="priority"><option>A</option><option>B</option><option>C</option></select></label><button class="btn primary" type="submit">Ajouter</button></form></div>
 <div id="toast" class="toast"></div>
-<script src="data.js?v=clean-1"></script><script src="app.js?v=clean-1"></script><script src="priorities.js?v=clean-1"></script><script src="outreach.js?v=clean-1"></script><script src="radar.js?v=clean-1"></script>
+<script src="data.js?v=clean-1"></script><script src="app.js?v=clean-1"></script><script src="priorities.js?v=clean-1"></script><script src="outreach.js?v=clean-1"></script><script src="radar.js?v=clean-1"></script><script src="career.js?v=clean-1"></script>
 </body></html>
