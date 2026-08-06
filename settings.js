@@ -51,23 +51,39 @@ function init(){
  renderIntegrationStatus();
  const scanBtn=document.querySelector('#scanTriggerBtn');
  const scanStatus=document.querySelector('#scanTriggerStatus');
- if(scanBtn){
-  scanBtn.onclick=async()=>{
-   scanBtn.disabled=true;
-   scanStatus.textContent='Scan en cours (recherche web + IA)... ça peut prendre 20 à 40 secondes.';
-   try{
-    const r=await fetch('/.netlify/functions/scan-trigger',{method:'POST'});
-    const data=await r.json();
-    if(!r.ok)throw new Error(data.error||'Scan indisponible');
+ async function pollScanStatus(attempt){
+  if(attempt>20){ // ~80s max
+   scanStatus.textContent='Le scan met plus de temps que prévu à répondre. Il continue en arrière-plan — reviens vérifier Radar Marché / Opportunités Carrière dans une minute.';
+   scanBtn.disabled=false;
+   return;
+  }
+  try{
+   const r=await fetch('/.netlify/functions/scan-status');
+   const data=await r.json();
+   if(data.state==='done'){
     const radarMsg=data.radar?.skipped?`Radar : ${data.radar.reason}`:`Radar : ${data.radar.added} nouveau(x) signal(aux)`;
     const careerMsg=data.career?.skipped?`Carrière : ${data.career.reason}`:`Carrière : ${data.career.added} nouvelle(s) suggestion(s)`;
     scanStatus.textContent=`${radarMsg} · ${careerMsg}`;
+    scanBtn.disabled=false;
     if(window.Oligart)window.Oligart.toast('Scan terminé');
+    return;
+   }
+  }catch{/* on retente simplement au prochain intervalle */}
+  setTimeout(()=>pollScanStatus(attempt+1),4000);
+ }
+ if(scanBtn){
+  scanBtn.onclick=async()=>{
+   scanBtn.disabled=true;
+   scanStatus.textContent='Scan lancé (recherche web + IA)... suivi en cours, ça peut prendre 20 à 60 secondes.';
+   try{
+    const r=await fetch('/.netlify/functions/scan-trigger',{method:'POST'});
+    const data=await r.json().catch(()=>({}));
+    if(!r.ok)throw new Error(data.error||`Scan indisponible (code ${r.status})`);
+    pollScanStatus(0);
    }catch(e){
     // Jamais bloquant : une erreur ici (fonction pas déployée, quota, etc.)
     // affiche juste un message clair, sans casser le reste de la page.
     scanStatus.textContent="Scan indisponible pour le moment ("+(e.message||'erreur inconnue')+"). Les scans planifiés quotidiens continueront de tourner normalement.";
-   }finally{
     scanBtn.disabled=false;
    }
   };
