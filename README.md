@@ -17,12 +17,13 @@ explicite) si une donnée manque ou qu'un appel réseau échoue.**
 
 1. **Dashboard** — métriques clés, relances dues, opportunités carrière (pipeline),
    activité récente (fusion outreach + signaux marché).
-2. **Base prospects** — 230 entreprises (objectif 300-400, en cours d'extension
+2. **Base prospects** — 250 entreprises (objectif 300-400, en cours d'extension
    par lots vérifiés), avec CEO, Head of Sales, LinkedIn,
    email professionnel (quand disponible), site, notes, timeline de contacts,
    statut de pipeline. Couvre média/tech/internet/influence/entertainment
    ainsi que le marché automobile classique/collection (maisons de ventes,
-   assurance, restauration, marketplaces, médias spécialisés).
+   assurance, restauration, pièces détachées, expertise, transport spécialisé,
+   marketplaces, médias spécialisés).
 3. **Top Priorités** — les 30 entreprises au score le plus élevé.
 4. **Outreach** — séquence multi-canal (Email → LinkedIn → Relance email → Téléphone),
    historique de contact par prospect, hub listant les actions dues.
