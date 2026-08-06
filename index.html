@@ -16,6 +16,7 @@
     <button class="nav" data-view="priorities">Top Priorités</button>
     <button class="nav" data-view="board">Pipeline</button>
     <button class="nav" data-view="today">Relances</button>
+    <button class="nav" data-view="outreach">Outreach</button>
   </nav>
   <div class="side-bottom">
     <button id="exportBtn" class="btn secondary">Exporter CSV</button>
@@ -39,9 +40,12 @@
 </section>
 <section id="board" class="view"><div id="kanban" class="kanban"></div></section>
 <section id="today" class="view"><div class="panel"><div class="panel-head"><h3>À faire maintenant</h3><span class="muted">Relances échues et contacts prioritaires</span></div><div id="todayList"></div></div></section>
+<section id="outreach" class="view">
+ <div class="panel"><div class="panel-head"><h3>Séquence en cours</h3><span class="muted">Email → LinkedIn → Relance → Téléphone</span></div><div id="outreachDue"></div></div>
+</section>
 </main></div>
 <div id="drawer" class="drawer"><div class="backdrop" data-close></div><div class="drawer-panel"><button class="close" data-close>×</button><div id="drawerBody"></div></div></div>
 <div id="modal" class="modal"><div class="backdrop" data-close-modal></div><form id="addForm" class="modal-card"><button class="close" type="button" data-close-modal>×</button><p class="eyebrow">NOUVEAU PROSPECT</p><h2>Ajouter une entreprise</h2><label>Entreprise<input name="company" required></label><label>Secteur<input name="sector"></label><label>Site web<input name="website" placeholder="https://..."></label><label>Décideur cible<input name="targetRole" value="CEO / CRO"></label><label>Priorité<select name="priority"><option>A</option><option>B</option><option>C</option></select></label><button class="btn primary" type="submit">Ajouter</button></form></div>
 <div id="toast" class="toast"></div>
-<script src="data.js?v=clean-1"></script><script src="app.js?v=clean-1"></script><script src="priorities.js?v=clean-1"></script>
+<script src="data.js?v=clean-1"></script><script src="app.js?v=clean-1"></script><script src="priorities.js?v=clean-1"></script><script src="outreach.js?v=clean-1"></script>
 </body></html>
