@@ -62,6 +62,7 @@
    <label class="wide">Notes<textarea id="cNotes"></textarea></label>
    <div class="actions wide"><button type="submit" class="btn primary">Enregistrer</button></div>
   </form>
+  <div id="careerSuggestions"></div>
   <div id="careerList"></div>
  </div>
 </section>
@@ -82,7 +83,9 @@
   <article class="panel">
    <div class="panel-head"><h3>Intégrations</h3><span class="muted">Configurées côté Netlify (variables d'environnement)</span></div>
    <div id="integrationStatus" class="detail-grid"></div>
-   <p class="muted" style="margin-top:14px">SMTP : <code>SMTP_HOST</code>, <code>SMTP_PORT</code>, <code>SMTP_SECURE</code>, <code>SMTP_USER</code>, <code>SMTP_PASS</code>.<br>Assistant IA : <code>ANTHROPIC_API_KEY</code> (modèle via <code>ANTHROPIC_MODEL</code>, optionnel).<br>Ces valeurs ne transitent jamais côté client — seul un statut booléen est affiché ici.</p>
+   <div class="actions" style="margin-top:14px"><button id="scanTriggerBtn" class="btn secondary">Lancer un scan Radar + Carrière maintenant</button></div>
+   <p class="muted" id="scanTriggerStatus" style="margin-top:8px"></p>
+   <p class="muted" style="margin-top:14px">SMTP : <code>SMTP_HOST</code>, <code>SMTP_PORT</code>, <code>SMTP_SECURE</code>, <code>SMTP_USER</code>, <code>SMTP_PASS</code>.<br>Assistant IA : <code>ANTHROPIC_API_KEY</code> (modèle via <code>ANTHROPIC_MODEL</code>, optionnel).<br>Scans automatiques quotidiens (Radar Marché + Opportunités Carrière) : utilisent la même clé <code>ANTHROPIC_API_KEY</code>, aucune configuration supplémentaire nécessaire.<br>Ces valeurs ne transitent jamais côté client — seul un statut booléen est affiché ici.</p>
   </article>
  </div>
 </section>

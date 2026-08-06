@@ -1,10 +1,13 @@
 (()=>{
 'use strict';
 // Radar Marché : journal de signaux (levée de fonds, recrutement, ouverture pays,
-// changement CEO/CRO) rattachés à chaque prospect. Pas d'API externe branchée ici
-// (aucune clé de données financières/emploi n'est disponible côté client) —
-// Rodolph loggue les signaux qu'il repère (LinkedIn, presse, alertes) et le radar
-// les centralise, triés par date, filtrables par type. Aucune donnée inventée.
+// changement CEO/CRO) rattachés à chaque prospect. Deux sources fusionnées :
+// 1) signaux ajoutés manuellement par Rodolph depuis une fiche prospect
+// 2) signaux détectés automatiquement chaque jour côté serveur (scan planifié
+//    Netlify + recherche web réelle), stockés centralement (Netlify Blobs) —
+//    visibles depuis n'importe quel appareil, pas seulement en local.
+// Si le scan automatique n'est pas configuré ou indisponible, le radar
+// continue de fonctionner avec les seuls signaux manuels : jamais bloquant.
 const TYPES=[
  {id:'funding',label:'Levée de fonds'},
  {id:'hiring',label:'Recrutement (croissance équipe)'},
@@ -13,6 +16,26 @@ const TYPES=[
  {id:'cro_change',label:'Changement de CRO / Head of Sales'}
 ];
 const TYPE_LABEL=Object.fromEntries(TYPES.map(t=>[t.id,t.label]));
+
+let serverSignals=[];
+let serverLastRun=null;
+let serverFetched=false;
+
+async function fetchServerSignals(){
+ try{
+  const r=await fetch('/.netlify/functions/radar-data');
+  if(!r.ok)throw new Error('radar-data indisponible');
+  const data=await r.json();
+  serverSignals=Array.isArray(data.signals)?data.signals:[];
+  serverLastRun=data.lastRun||null;
+ }catch{
+  // Pas de scan automatique configuré/disponible : le radar reste utilisable
+  // avec les seuls signaux manuels, sans message d'erreur intrusif.
+  serverSignals=[];serverLastRun=null;
+ }
+ serverFetched=true;
+ renderRadar();
+}
 
 function ensureFilterOptions(){
  const sel=document.querySelector('#radarFilter');
@@ -29,11 +52,15 @@ function renderRadar(){
  const el=document.querySelector('#radarList');
  if(!el)return;
  const filter=document.querySelector('#radarFilter')?.value||'';
+ const byId=Object.fromEntries(getProspects().map(p=>[p.id,p]));
  const all=[];
- getProspects().forEach(p=>(p.signals||[]).forEach(s=>all.push({...s,company:p.company,id:p.id})));
+ getProspects().forEach(p=>(p.signals||[]).forEach(s=>all.push({...s,company:p.company,id:p.id,auto:false})));
+ serverSignals.forEach(s=>{const p=byId[s.prospectId];if(p)all.push({...s,id:p.id,auto:true})});
  const list=all.filter(s=>!filter||s.type===filter).sort((a,b)=>b.date.localeCompare(a.date)).slice(0,150);
- if(!list.length){el.innerHTML='<p class="muted">Aucun signal enregistré. Ouvre une fiche prospect pour en ajouter un.</p>';return}
- el.innerHTML=list.map(s=>`<div class="row row-5" data-id="${esc(s.id)}"><b>${esc(s.company)}</b><span class="pill">${esc(TYPE_LABEL[s.type]||s.type)}</span><span>${esc(s.note||'')}</span><span class="muted">${esc(s.date)}</span><span></span></div>`).join('');
+ const statusLine=serverFetched?(serverLastRun?`Dernier scan automatique : ${esc(serverLastRun)}`:'Scan automatique pas encore configuré ou pas encore exécuté — signaux manuels uniquement.'):'';
+ const statusHtml=statusLine?`<p class="muted" style="margin:-6px 0 12px">${statusLine}</p>`:'';
+ if(!list.length){el.innerHTML=statusHtml+'<p class="muted">Aucun signal enregistré. Ouvre une fiche prospect pour en ajouter un, ou attends le prochain scan automatique.</p>';return}
+ el.innerHTML=statusHtml+list.map(s=>`<div class="row row-5" data-id="${esc(s.id)}"><b>${esc(s.company)}</b><span class="pill">${esc(TYPE_LABEL[s.type]||s.type)}${s.auto?' · auto':''}</span><span>${esc(s.note||'')}</span><span class="muted">${esc(s.date)}</span><span></span></div>`).join('');
  el.querySelectorAll('[data-id]').forEach(r=>r.onclick=()=>window.Oligart.openProspect(r.dataset.id));
 }
 
@@ -43,7 +70,10 @@ function renderDrawerRadar(id){
  const p=window.Oligart.getProspect(id);
  if(!p)return;
  const {esc}=window.Oligart;
- const list=(p.signals||[]).slice(0,5).map(s=>`<li><span class="muted">${esc(s.date)} · ${esc(TYPE_LABEL[s.type]||s.type)}</span> — ${esc(s.note||'')}</li>`).join('')||'<li class="muted">Aucun signal pour cette entreprise.</li>';
+ const manual=(p.signals||[]).map(s=>({...s,auto:false}));
+ const auto=serverSignals.filter(s=>s.prospectId===id).map(s=>({...s,auto:true}));
+ const merged=[...manual,...auto].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,6);
+ const list=merged.map(s=>`<li><span class="muted">${esc(s.date)} · ${esc(TYPE_LABEL[s.type]||s.type)}${s.auto?' · détecté auto':''}</span> — ${esc(s.note||'')}</li>`).join('')||'<li class="muted">Aucun signal pour cette entreprise.</li>';
  const block=document.createElement('div');
  block.className='panel';
  block.style.marginTop='18px';
@@ -62,6 +92,7 @@ function init(){
  if(!window.Oligart)return;
  window.Oligart.registerRenderHook(renderRadar);
  renderRadar();
+ fetchServerSignals();
  document.addEventListener('oligart:prospect-opened',e=>{
   try{renderDrawerRadar(e.detail.id)}catch(err){console.warn('[oligart] radar drawer render failed:',err)}
  });

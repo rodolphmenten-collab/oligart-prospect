@@ -49,6 +49,29 @@ function init(){
   };
  }
  renderIntegrationStatus();
+ const scanBtn=document.querySelector('#scanTriggerBtn');
+ const scanStatus=document.querySelector('#scanTriggerStatus');
+ if(scanBtn){
+  scanBtn.onclick=async()=>{
+   scanBtn.disabled=true;
+   scanStatus.textContent='Scan en cours (recherche web + IA)... ça peut prendre 20 à 40 secondes.';
+   try{
+    const r=await fetch('/.netlify/functions/scan-trigger',{method:'POST'});
+    const data=await r.json();
+    if(!r.ok)throw new Error(data.error||'Scan indisponible');
+    const radarMsg=data.radar?.skipped?`Radar : ${data.radar.reason}`:`Radar : ${data.radar.added} nouveau(x) signal(aux)`;
+    const careerMsg=data.career?.skipped?`Carrière : ${data.career.reason}`:`Carrière : ${data.career.added} nouvelle(s) suggestion(s)`;
+    scanStatus.textContent=`${radarMsg} · ${careerMsg}`;
+    if(window.Oligart)window.Oligart.toast('Scan terminé');
+   }catch(e){
+    // Jamais bloquant : une erreur ici (fonction pas déployée, quota, etc.)
+    // affiche juste un message clair, sans casser le reste de la page.
+    scanStatus.textContent="Scan indisponible pour le moment ("+(e.message||'erreur inconnue')+"). Les scans planifiés quotidiens continueront de tourner normalement.";
+   }finally{
+    scanBtn.disabled=false;
+   }
+  };
+ }
 }
 try{init()}catch(e){console.warn('[oligart] settings module failed to init, rest of app unaffected:',e)}
 
