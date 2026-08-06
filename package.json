@@ -3,6 +3,8 @@
   "version": "1.0.0",
   "private": true,
   "dependencies": {
-    "nodemailer": "^6.9.16"
+    "nodemailer": "^6.9.16",
+    "@netlify/blobs": "^10.7.12",
+    "@netlify/functions": "^5.3.0"
   }
 }
