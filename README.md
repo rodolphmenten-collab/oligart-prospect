@@ -110,8 +110,11 @@ Deux fonctions planifiées (cron) tournent chaque jour sans intervention :
   Anthropic, et stocke les signaux trouvés. Rotation complète des 200
   entreprises en ~40 jours avec le réglage par défaut.
 - **`scan-career-background`** (6h10 UTC) — cherche des offres récentes pour
-  VP Sales / GM / Country Manager / CRO / Head of Sales, stocke des
-  suggestions (jamais ajoutées directement au pipeline de Rodolph).
+  VP of Sales / Head of Sales / Country Manager / General Manager / CRO sur
+  LinkedIn, APEC, Cadremploi, Welcome to the Jungle et Indeed (secteurs
+  digital, publicité, tech, médias), stocke des suggestions avec lien direct
+  vers l'annonce (jamais ajoutées directement au pipeline de Rodolph). Toute
+  offre sans lien direct exploitable est écartée automatiquement.
 
 Le stockage est centralisé via **Netlify Blobs** (inclus, aucune variable
 d'environnement supplémentaire à configurer, aucune base de données externe).
