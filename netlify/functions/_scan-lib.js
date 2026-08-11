@@ -119,12 +119,16 @@ async function runCareerScan(deps) {
   const { store, fetchImpl, apiKey } = deps;
   if (!apiKey) return { skipped: true, reason: "ANTHROPIC_API_KEY non configurée" };
 
-  const roles = "VP Sales, GM / General Manager, Country Manager, CRO, Head of Sales";
-  const prompt = `Recherche sur le web des offres d'emploi RÉCENTES (moins de 14 jours si possible) en France pour les postes suivants : ${roles}, ` +
-    `dans des startups ou scale-ups (idéalement secteurs adtech, martech, marketplace, SaaS B2B). ` +
+  const roles = "VP of Sales, Head of Sales, Country Manager, General Manager, CRO";
+  const sites = "LinkedIn (linkedin.com/jobs), APEC (apec.fr), Cadremploi (cadremploi.fr), Welcome to the Jungle (welcometothejungle.com), Indeed (indeed.fr)";
+  const industries = "digital, publicité/adtech, tech, médias";
+  const prompt = `Recherche sur le web des offres d'emploi RÉCENTES (moins de 14 jours si possible) en France pour les postes suivants : ${roles}. ` +
+    `Cherche spécifiquement sur ces sites : ${sites}. ` +
+    `Secteurs cibles : ${industries} (startups, scale-ups, groupes établis — pas de limite de taille d'entreprise). ` +
+    `Pour chaque offre trouvée, l'URL doit pointer directement vers l'annonce (pas vers une page de recherche générique). ` +
     `Si tu ne trouves rien de fiable et récent, réponds avec un tableau vide.\n\n` +
-    `Réponds UNIQUEMENT avec un tableau JSON (aucun texte autour, aucun markdown), maximum 8 éléments, chaque élément au format :\n` +
-    `{"role":"intitulé du poste tel qu'annoncé","company":"nom de l'entreprise","link":"URL de l'offre","source":"nom du site (LinkedIn, Welcome to the Jungle...)","note":"résumé en une phrase"}`;
+    `Réponds UNIQUEMENT avec un tableau JSON (aucun texte autour, aucun markdown), maximum 15 éléments, chaque élément au format :\n` +
+    `{"role":"intitulé du poste tel qu'annoncé","company":"nom de l'entreprise","link":"URL directe de l'offre (obligatoire, jamais vide)","source":"nom du site (LinkedIn, APEC, Cadremploi, Welcome to the Jungle, Indeed...)","note":"résumé en une phrase"}`;
 
   let suggestions = [];
   try {
@@ -140,13 +144,16 @@ async function runCareerScan(deps) {
   let added = 0;
   for (const s of suggestions) {
     if (!s || typeof s !== "object" || !s.company || !s.role) continue;
-    const id = hashId(`${s.company}|${s.role}|${s.link || ""}`.slice(0, 200));
+    // Une suggestion sans lien direct vers l'offre est inutile pour Rodolph
+    // (le but est de pouvoir cliquer et postuler) — on l'ignore.
+    if (!s.link || typeof s.link !== "string" || !/^https?:\/\//i.test(s.link)) continue;
+    const id = hashId(`${s.company}|${s.role}|${s.link}`.slice(0, 200));
     if (existingIds.has(id)) continue;
-    existing.unshift({ id, role: String(s.role).slice(0, 120), company: String(s.company).slice(0, 120), link: s.link || "", source: s.source || "", note: (s.note || "").slice(0, 300), date: today });
+    existing.unshift({ id, role: String(s.role).slice(0, 120), company: String(s.company).slice(0, 120), link: s.link, source: s.source || "", note: (s.note || "").slice(0, 300), date: today });
     existingIds.add(id);
     added++;
   }
-  const capped = existing.slice(0, 60);
+  const capped = existing.slice(0, 120);
   await store.set("career-suggestions", capped);
   await store.set("career-last-run", today);
   return { skipped: false, added, total: capped.length };

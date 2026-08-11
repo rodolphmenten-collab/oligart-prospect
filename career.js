@@ -22,8 +22,14 @@ function persist(){try{localStorage.setItem(KEY,JSON.stringify(opportunities))}c
 function loadDismissed(){try{const d=JSON.parse(localStorage.getItem(DISMISSED_KEY)||'null');return Array.isArray(d)?new Set(d):new Set()}catch{return new Set()}}
 function persistDismissed(set){try{localStorage.setItem(DISMISSED_KEY,JSON.stringify([...set]))}catch{/* non bloquant */}}
 
+function companyLabel(o){
+ // Le nom devient un lien direct vers l'offre quand on en a une : c'est le
+ // "1 clic pour postuler" — ouvre directement l'annonce sur le site source.
+ return o.link ? `<a href="${esc(o.link)}" target="_blank" rel="noopener" title="Ouvrir l'offre et postuler">${esc(o.company)} ↗</a>` : esc(o.company);
+}
+
 function row(o){
- return `<div class="row row-5" data-id="${o.id}"><b>${esc(o.company)}</b><span>${esc(o.role)}</span><span class="muted">${esc(o.source||'—')}</span><select data-status="${o.id}">${STATUSES.map(s=>`<option ${s===o.status?'selected':''}>${s}</option>`).join('')}</select><button class="link-btn" data-del="${o.id}">Supprimer</button></div>`;
+ return `<div class="row row-5" data-id="${o.id}"><b>${companyLabel(o)}</b><span>${esc(o.role)}</span><span class="muted">${esc(o.source||'—')}</span><select data-status="${o.id}">${STATUSES.map(s=>`<option ${s===o.status?'selected':''}>${s}</option>`).join('')}</select><button class="link-btn" data-del="${o.id}">Supprimer</button></div>`;
 }
 
 async function fetchSuggestions(){
@@ -67,7 +73,7 @@ function renderSuggestions(){
   el.innerHTML=suggestionsLastRun?`<p class="muted" style="margin-bottom:14px">Dernier scan automatique : ${esc(suggestionsLastRun)} — aucune nouvelle suggestion pour l'instant.</p>`:'';
   return;
  }
- el.innerHTML=`<div class="panel" style="margin-bottom:18px;border-color:#3a3a2a"><div class="panel-head"><h3>Suggestions détectées automatiquement</h3><span class="muted">${suggestionsLastRun?'Scan du '+esc(suggestionsLastRun):''}</span></div>${visible.map(s=>`<div class="row row-5"><b>${esc(s.company)}</b><span>${esc(s.role)}</span><span class="muted">${esc(s.note||s.source||'')}</span><button class="btn secondary" data-accept="${s.id}">Ajouter</button><button class="link-btn" data-dismiss="${s.id}">Ignorer</button></div>`).join('')}</div>`;
+ el.innerHTML=`<div class="panel" style="margin-bottom:18px;border-color:#3a3a2a"><div class="panel-head"><h3>Suggestions détectées automatiquement</h3><span class="muted">${suggestionsLastRun?'Scan du '+esc(suggestionsLastRun):''}</span></div>${visible.map(s=>`<div class="row row-5"><b>${companyLabel(s)}</b><span>${esc(s.role)}</span><span class="muted">${esc(s.note||s.source||'')}</span><button class="btn secondary" data-accept="${s.id}">Ajouter</button><button class="link-btn" data-dismiss="${s.id}">Ignorer</button></div>`).join('')}</div>`;
  el.querySelectorAll('[data-accept]').forEach(btn=>btn.onclick=()=>{const s=suggestions.find(x=>x.id===btn.dataset.accept);if(s)acceptSuggestion(s)});
  el.querySelectorAll('[data-dismiss]').forEach(btn=>btn.onclick=()=>{const s=suggestions.find(x=>x.id===btn.dataset.dismiss);if(s)dismissSuggestion(s)});
 }
