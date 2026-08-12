@@ -29,7 +29,7 @@ export const VENUE_TYPE_MAP: Record<string, VenueType> = {
  */
 export async function createVenueRecord(
   service: any,
-  params: { name: string; city: string; type: string; plan: string; contactName?: string; contactEmail?: string }
+  params: { name: string; city: string; type: string; plan: string }
 ) {
   const venueType: VenueType = VENUE_TYPE_MAP[(params.type ?? '').toLowerCase()] ?? 'bar';
   const baseSlug = slugify(params.name) || 'venue';
@@ -55,8 +55,6 @@ export async function createVenueRecord(
       verification_radius_m: 75,
       checkin_duration_minutes: DEFAULT_CHECKIN_DURATION_MINUTES[venueType],
       plan: (params.plan as any) || 'basique',
-      contact_name: params.contactName || null,
-      contact_email: params.contactEmail || null,
     })
     .select('id, slug')
     .single();

@@ -30,14 +30,13 @@ export function ShopView({ venue, orders }: { venue: VenueLite; orders: OrderRow
     <main className="min-h-screen px-6 py-12">
       <div className="mx-auto max-w-4xl">
         <Link href="/dashboard" className="text-xs text-bone-faint hover:text-bone-dim">
-          &larr; Retour au dashboard
+          &larr; Back to dashboard
         </Link>
-        <p className="mt-4 font-mono text-xs uppercase tracking-[0.3em] text-brass">Boutique</p>
-        <h1 className="mt-2 font-display text-3xl italic text-bone">Supports physiques pour {venue.name}</h1>
+        <p className="mt-4 font-mono text-xs uppercase tracking-[0.3em] text-brass">Shop</p>
+        <h1 className="mt-2 font-display text-3xl italic text-bone">Physical supports for {venue.name}</h1>
         <p className="mt-2 text-sm text-bone-dim">
-          Commandez des supports imprimés pour votre établissement, avec votre logo et
-          votre propre texte. Ceci envoie une demande — nous confirmons le prix et la
-          livraison par email.
+          Order printed materials for your venue, using your logo and your own wording.
+          This places a request — we&rsquo;ll confirm pricing and delivery by email.
         </p>
 
         <div className="mt-10 grid gap-4 sm:grid-cols-2">
@@ -58,7 +57,7 @@ export function ShopView({ venue, orders }: { venue: VenueLite; orders: OrderRow
 
         {orders.length > 0 && (
           <div className="mt-12">
-            <h2 className="font-display text-xl italic text-bone">Vos commandes</h2>
+            <h2 className="font-display text-xl italic text-bone">Your orders</h2>
             <div className="mt-4 divide-y hairline rounded-2xl border hairline">
               {orders.map((o) => (
                 <div key={o.id} className="flex items-center justify-between px-5 py-4">
@@ -152,7 +151,7 @@ function OrderModal({
 
     if (!res.ok) {
       const data = await res.json();
-      setError(data.error ?? 'Une erreur est survenue.');
+      setError(data.error ?? 'Something went wrong.');
       return;
     }
 
@@ -172,7 +171,7 @@ function OrderModal({
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           <div>
-            <label className="mb-1 block text-xs text-bone-faint">Quantité</label>
+            <label className="mb-1 block text-xs text-bone-faint">Quantity</label>
             <input
               type="number"
               min={1}
@@ -184,9 +183,9 @@ function OrderModal({
 
           {product.allowsCustomText && (
             <div>
-              <label className="mb-1 block text-xs text-bone-faint">Texte personnalisé sur le support</label>
+              <label className="mb-1 block text-xs text-bone-faint">Custom text on the support</label>
               <textarea
-                placeholder="ex. Scannez pour voir qui est là ce soir"
+                placeholder="e.g. Scan to see who's here tonight"
                 rows={2}
                 maxLength={120}
                 value={customText}
@@ -203,20 +202,19 @@ function OrderModal({
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={logoPreview} alt="" className="h-full w-full object-cover" />
               ) : (
-                'Ajouter un logo'
+                'Upload logo'
               )}
               <input type="file" accept="image/*" onChange={onLogoChange} className="hidden" />
             </label>
             <p className="mt-2 text-[11px] text-bone-faint">
-              Utilise par défaut la photo de couverture de votre établissement si vous n’en
-              téléversez pas.
+              Defaults to your venue&rsquo;s cover photo if you don&rsquo;t upload one.
             </p>
           </div>
 
           {error && <p className="text-xs text-red-400">{error}</p>}
 
           <Button type="submit" disabled={submitting} className="w-full">
-            {submitting ? 'Envoi…' : 'Passer la commande'}
+            {submitting ? 'Submitting…' : 'Request order'}
           </Button>
         </form>
       </div>

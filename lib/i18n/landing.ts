@@ -36,10 +36,10 @@ export const landingCopy = {
     pricingEyebrow: 'Pricing',
     pricingTitle: 'Simple plans, no setup fees.',
     choosePlan: 'Choose',
-    requestEyebrow: 'Get in touch',
-    requestTitle: 'Interested in Lucky for your venue?',
+    requestEyebrow: 'Get started',
+    requestTitle: 'Let\u2019s set up your venue.',
     requestBody:
-      'We work directly with a curated set of hotels, restaurants, bars and beach clubs. Reach out and we\u2019ll set everything up for you \u2014 account, QR code, and page included.',
+      'Tell us about your venue and we\u2019ll set up your account, your QR code, and your page — usually within a day.',
   },
   fr: {
     logIn: 'Connexion',
@@ -76,9 +76,9 @@ export const landingCopy = {
     pricingEyebrow: 'Tarifs',
     pricingTitle: 'Des formules simples, sans frais d\u2019installation.',
     choosePlan: 'Choisir',
-    requestEyebrow: 'Nous contacter',
-    requestTitle: 'Envie de Lucky pour votre établissement ?',
+    requestEyebrow: 'Commencer',
+    requestTitle: 'Configurons votre établissement.',
     requestBody:
-      'Nous travaillons directement avec une sélection d\u2019hôtels, restaurants, bars et beach clubs. Contactez-nous et nous nous occupons de tout \u2014 compte, QR code et page inclus.',
+      'Parlez-nous de votre établissement, et nous configurons votre compte, votre QR code et votre page — généralement en moins d\u2019une journée.',
   },
 } as const;
