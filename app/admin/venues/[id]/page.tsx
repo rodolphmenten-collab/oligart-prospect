@@ -23,6 +23,8 @@ async function updateVenue(formData: FormData) {
       verification_radius_m: Number(formData.get('radius')),
       checkin_duration_minutes: Number(formData.get('duration')),
       plan: formData.get('plan') as string,
+      contact_name: formData.get('contactName') as string,
+      contact_email: formData.get('contactEmail') as string,
     })
     .eq('id', id);
 
@@ -64,7 +66,7 @@ export default async function EditVenuePage({ params }: { params: { id: string }
       <form action={updateVenue} className="mt-8 space-y-4">
         <input type="hidden" name="id" value={venue.id} />
         <div>
-          <label className="mb-1 block text-xs text-bone-faint">Name</label>
+          <label className="mb-1 block text-xs text-bone-faint">Nom</label>
           <input
             name="name"
             defaultValue={venue.name}
@@ -72,7 +74,7 @@ export default async function EditVenuePage({ params }: { params: { id: string }
           />
         </div>
         <div>
-          <label className="mb-1 block text-xs text-bone-faint">City</label>
+          <label className="mb-1 block text-xs text-bone-faint">Ville</label>
           <input
             name="city"
             defaultValue={venue.city}
@@ -103,7 +105,7 @@ export default async function EditVenuePage({ params }: { params: { id: string }
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="mb-1 block text-xs text-bone-faint">Verification radius (m)</label>
+            <label className="mb-1 block text-xs text-bone-faint">Rayon de vérification (m)</label>
             <input
               name="radius"
               type="number"
@@ -112,7 +114,7 @@ export default async function EditVenuePage({ params }: { params: { id: string }
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-bone-faint">Auto-checkout (min)</label>
+            <label className="mb-1 block text-xs text-bone-faint">Déconnexion automatique (min)</label>
             <input
               name="duration"
               type="number"
@@ -133,18 +135,35 @@ export default async function EditVenuePage({ params }: { params: { id: string }
             <option value="premium">Premium — 299€</option>
           </select>
         </div>
+        <div>
+          <label className="mb-1 block text-xs text-bone-faint">Nom du contact</label>
+          <input
+            name="contactName"
+            defaultValue={venue.contact_name ?? ''}
+            className="w-full rounded-full border hairline bg-transparent px-5 py-3 text-sm text-bone"
+          />
+        </div>
+        <div>
+          <label className="mb-1 block text-xs text-bone-faint">Email du contact</label>
+          <input
+            name="contactEmail"
+            type="email"
+            defaultValue={venue.contact_email ?? ''}
+            className="w-full rounded-full border hairline bg-transparent px-5 py-3 text-sm text-bone"
+          />
+        </div>
         <button
           type="submit"
           className="w-full rounded-full bg-bone px-6 py-3 text-sm font-medium text-ink hover:bg-brass-bright"
         >
-          Save changes
+          Enregistrer
         </button>
       </form>
 
       <form action={deleteVenue} className="mt-4">
         <input type="hidden" name="id" value={venue.id} />
         <button type="submit" className="w-full rounded-full border border-red-400/30 py-3 text-xs text-red-400">
-          Delete venue
+          Supprimer l’établissement
         </button>
       </form>
     </main>

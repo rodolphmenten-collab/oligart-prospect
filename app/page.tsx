@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { VenueLeadForm } from '@/components/VenueLeadForm';
 import { LanguageToggle } from '@/components/LanguageToggle';
 import { landingCopy, type Lang } from '@/lib/i18n/landing';
 
@@ -81,12 +80,6 @@ export default function LandingPage() {
         >
           {t.logIn}
         </Link>
-        <Link
-          href="#request-access"
-          className="rounded-full bg-bone px-4 py-2 text-xs font-medium tracking-wide text-ink transition-colors hover:bg-brass-bright"
-        >
-          {t.signUp}
-        </Link>
       </div>
 
       {/* Hero */}
@@ -109,7 +102,7 @@ export default function LandingPage() {
 
         <div className="mt-10 flex animate-fade_up flex-wrap items-center gap-4">
           <a
-            href="#request-access"
+            href="mailto:hello@lucky-app.io"
             className="inline-flex items-center justify-center gap-2 rounded-full bg-bone px-6 py-3 text-sm font-medium tracking-wide text-ink transition-colors duration-200 hover:bg-brass-bright"
           >
             {t.ctaPrimary}
@@ -208,7 +201,7 @@ export default function LandingPage() {
                 ))}
               </ul>
               <a
-                href="#request-access"
+                href="mailto:hello@lucky-app.io"
                 className={`mt-6 inline-flex items-center justify-center rounded-full px-5 py-2.5 text-xs font-medium tracking-wide transition-colors ${
                   plan.highlighted
                     ? 'bg-bone text-ink hover:bg-brass-bright'
@@ -233,15 +226,20 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Request access */}
-      <section id="request-access" className="mx-auto max-w-2xl border-t hairline px-6 py-28">
+      {/* Get in touch */}
+      <section className="mx-auto max-w-2xl border-t hairline px-6 py-28 text-center">
         <p className="font-mono text-xs uppercase tracking-[0.3em] text-brass">{t.requestEyebrow}</p>
         <h2 className="mt-4 font-display text-4xl italic leading-tight text-bone text-balance">
           {t.requestTitle}
         </h2>
         <p className="mt-4 text-sm leading-relaxed text-bone-dim">{t.requestBody}</p>
-        <div className="mt-10">
-          <VenueLeadForm />
+        <div className="mt-8">
+          <a
+            href="mailto:hello@lucky-app.io"
+            className="inline-flex items-center justify-center gap-2 rounded-full bg-bone px-6 py-3 text-sm font-medium tracking-wide text-ink transition-colors duration-200 hover:bg-brass-bright"
+          >
+            hello@lucky-app.io
+          </a>
         </div>
       </section>
 

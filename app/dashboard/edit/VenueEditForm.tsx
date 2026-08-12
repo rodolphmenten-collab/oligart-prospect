@@ -36,7 +36,7 @@ export function VenueEditForm({ venue }: { venue: Venue }) {
 
   function captureLocation() {
     if (!('geolocation' in navigator)) {
-      setLocationError('Your browser doesn\u2019t support location.');
+      setLocationError('Votre navigateur ne supporte pas la localisation.');
       return;
     }
     setLocating(true);
@@ -47,7 +47,7 @@ export function VenueEditForm({ venue }: { venue: Venue }) {
         setLocating(false);
       },
       () => {
-        setLocationError('Couldn\u2019t get your location. Check permissions and try again.');
+        setLocationError("Impossible d'obtenir votre position. Vérifiez les autorisations et réessayez.");
         setLocating(false);
       },
       { enableHighAccuracy: true, timeout: 10000 }
@@ -67,7 +67,7 @@ export function VenueEditForm({ venue }: { venue: Venue }) {
       });
       if (uploadErr) {
         setSaving(false);
-        setError(`Photo upload failed: ${uploadErr.message}`);
+        setError(`Échec de l'envoi de la photo : ${uploadErr.message}`);
         return;
       }
       coverUrl = supabase.storage.from('venue-photos').getPublicUrl(path).data.publicUrl;
@@ -100,37 +100,38 @@ export function VenueEditForm({ venue }: { venue: Venue }) {
   return (
     <main className="mx-auto min-h-screen max-w-lg px-6 py-16">
       <Link href="/dashboard" className="text-xs text-bone-faint hover:text-bone-dim">
-        &larr; Back to dashboard
+        &larr; Retour au dashboard
       </Link>
-      <p className="mt-4 font-mono text-xs uppercase tracking-[0.3em] text-brass">Edit venue</p>
+      <p className="mt-4 font-mono text-xs uppercase tracking-[0.3em] text-brass">Modifier l’établissement</p>
       <h1 className="mt-2 font-display text-3xl italic text-bone">{venue.name}</h1>
 
       {locationNeedsSetup && (
         <div className="mt-6 rounded-2xl border border-brass/40 bg-brass/5 p-4">
-          <p className="text-sm text-bone">Location not set yet</p>
+          <p className="text-sm text-bone">Position non définie</p>
           <p className="mt-1 text-xs text-bone-dim">
-            Guests can&rsquo;t check in until your venue&rsquo;s real position is set. Stand
-            inside the venue and tap the button below.
+            Vos clients ne pourront pas confirmer leur présence tant que la vraie position de
+            votre établissement n’est pas définie. Tenez-vous dans l’établissement et
+            appuyez sur le bouton ci-dessous.
           </p>
         </div>
       )}
 
       <form onSubmit={handleSubmit} className="mt-8 space-y-6">
         <div>
-          <label className="mb-2 block text-xs text-bone-faint">Cover photo</label>
+          <label className="mb-2 block text-xs text-bone-faint">Photo de couverture</label>
           <label className="relative flex h-40 w-full cursor-pointer items-center justify-center overflow-hidden rounded-2xl border hairline bg-ink-800 text-xs text-bone-faint">
             {coverPreview ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={coverPreview} alt="" className="h-full w-full object-cover" />
             ) : (
-              'Upload a photo of your venue'
+              'Ajouter une photo de votre établissement'
             )}
             <input type="file" accept="image/*" onChange={onCoverChange} className="hidden" />
           </label>
         </div>
 
         <div>
-          <label className="mb-1 block text-xs text-bone-faint">Venue name</label>
+          <label className="mb-1 block text-xs text-bone-faint">Nom de l’établissement</label>
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -139,7 +140,7 @@ export function VenueEditForm({ venue }: { venue: Venue }) {
         </div>
 
         <div>
-          <label className="mb-1 block text-xs text-bone-faint">City</label>
+          <label className="mb-1 block text-xs text-bone-faint">Ville</label>
           <input
             value={city}
             onChange={(e) => setCity(e.target.value)}
@@ -148,7 +149,7 @@ export function VenueEditForm({ venue }: { venue: Venue }) {
         </div>
 
         <div>
-          <label className="mb-1 block text-xs text-bone-faint">Check-in radius (meters)</label>
+          <label className="mb-1 block text-xs text-bone-faint">Rayon de vérification (mètres)</label>
           <input
             type="number"
             value={radius}
@@ -156,19 +157,20 @@ export function VenueEditForm({ venue }: { venue: Venue }) {
             className="w-full rounded-full border hairline bg-transparent px-5 py-3 text-sm text-bone focus:border-brass"
           />
           <p className="mt-1 text-[11px] text-bone-faint">
-            How close a guest must be to your venue to check in. 75m works for most
-            single-building venues; go higher for large properties.
+            À quelle distance un client doit se trouver de votre établissement pour confirmer
+            sa présence. 75m convient pour la plupart des lieux ; augmentez pour les
+            grandes propriétés.
           </p>
         </div>
 
         <div className="rounded-2xl border hairline p-4">
-          <p className="text-sm text-bone">Venue location</p>
+          <p className="text-sm text-bone">Position de l’établissement</p>
           {coords ? (
             <p className="mt-1 font-mono text-xs text-bone-dim">
-              {coords.lat.toFixed(5)}, {coords.lng.toFixed(5)} — captured
+              {coords.lat.toFixed(5)}, {coords.lng.toFixed(5)} — enregistrée
             </p>
           ) : (
-            <p className="mt-1 text-xs text-bone-faint">Not set yet.</p>
+            <p className="mt-1 text-xs text-bone-faint">Pas encore définie.</p>
           )}
           <button
             type="button"
@@ -176,20 +178,21 @@ export function VenueEditForm({ venue }: { venue: Venue }) {
             disabled={locating}
             className="mt-3 rounded-full border hairline px-4 py-2 text-xs tracking-wide text-bone-dim hover:border-brass"
           >
-            {locating ? 'Locating\u2026' : coords ? 'Update to my current location' : 'Set to my current location'}
+            {locating ? 'Localisation…' : coords ? 'Mettre à jour avec ma position actuelle' : 'Définir avec ma position actuelle'}
           </button>
           {locationError && <p className="mt-2 text-xs text-red-400">{locationError}</p>}
           <p className="mt-2 text-[11px] text-bone-faint">
-            Stand inside the venue when you tap this — it uses your device&rsquo;s GPS,
-            the same way a guest&rsquo;s check-in is verified.
+            Tenez-vous dans l’établissement quand vous appuyez sur ce bouton — cela utilise
+            le GPS de votre appareil, exactement comme la vérification de présence d’un
+            client.
           </p>
         </div>
 
         {error && <p className="text-xs text-red-400">{error}</p>}
-        {saved && <p className="text-xs text-signal-live">Saved.</p>}
+        {saved && <p className="text-xs text-signal-live">Enregistré.</p>}
 
         <Button type="submit" disabled={saving} className="w-full">
-          {saving ? 'Saving\u2026' : 'Save changes'}
+          {saving ? 'Enregistrement…' : 'Enregistrer'}
         </Button>
       </form>
     </main>
