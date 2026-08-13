@@ -1,6 +1,10 @@
 [build]
-  command = "npm run build"
-  publish = ".next"
+  publish = "."
+  functions = "netlify/functions"
 
-[[plugins]]
-  package = "@netlify/plugin-nextjs"
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Cache-Control = "no-store"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
