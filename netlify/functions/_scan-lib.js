@@ -111,52 +111,79 @@ async function runRadarScan(deps) {
 }
 
 /**
- * Scan Opportunités Carrière : cherche des offres correspondant aux rôles
- * cibles, ajoute des suggestions (jamais directement dans le pipeline de
- * l'utilisateur — c'est lui qui accepte ou ignore côté client).
+ * Scan Opportunités Carrière : agrège les offres correspondant aux rôles
+ * cibles sur plusieurs jobboards. Une recherche dédiée par site (en
+ * parallèle) plutôt qu'une seule requête combinée : demander à un modèle de
+ * fouiller 5 sites différents en une seule fois le pousse souvent à
+ * abandonner et renvoyer une liste vide, même quand des offres existent
+ * réellement. Une erreur sur un site n'empêche jamais les autres de
+ * remonter des résultats — jamais ajoutées directement au pipeline de
+ * l'utilisateur, c'est lui qui accepte ou ignore côté client.
  */
+const CAREER_ROLES = "VP of Sales, Head of Sales, Country Manager, General Manager, CRO (Chief Revenue Officer)";
+const CAREER_INDUSTRIES = "digital, publicité/adtech, tech, médias";
+const CAREER_SITES = [
+  { name: "LinkedIn", domain: "linkedin.com/jobs" },
+  { name: "APEC", domain: "apec.fr" },
+  { name: "Cadremploi", domain: "cadremploi.fr" },
+  { name: "Welcome to the Jungle", domain: "welcometothejungle.com" },
+  { name: "Indeed", domain: "indeed.fr" }
+];
+
+function careerPromptFor(site) {
+  return `Cherche sur le web, spécifiquement sur le site ${site.name} (${site.domain}), des offres d'emploi en France ` +
+    `pour l'un de ces postes : ${CAREER_ROLES}. Secteurs : ${CAREER_INDUSTRIES} (startups comme grands groupes, toute taille d'entreprise). ` +
+    `Inclue les offres publiées dans le dernier mois environ — pas besoin qu'elles soient ultra récentes, du moment qu'elles semblent encore actives. ` +
+    `Pour chaque offre, l'URL doit pointer vers l'annonce elle-même (pas une page de recherche générique). Sois large plutôt que restrictif : ` +
+    `inclue toute offre plausible correspondant à un de ces intitulés, même approximativement. Si vraiment aucune offre n'est trouvable sur ce site, réponds avec un tableau vide.\n\n` +
+    `Réponds UNIQUEMENT avec un tableau JSON (aucun texte autour, aucun markdown), maximum 8 éléments, chaque élément au format :\n` +
+    `{"role":"intitulé du poste tel qu'annoncé","company":"nom de l'entreprise","link":"URL directe de l'offre (obligatoire, jamais vide)","source":"${site.name}","note":"résumé en une phrase"}`;
+}
+
 async function runCareerScan(deps) {
   const { store, fetchImpl, apiKey } = deps;
   if (!apiKey) return { skipped: true, reason: "ANTHROPIC_API_KEY non configurée" };
 
-  const roles = "VP of Sales, Head of Sales, Country Manager, General Manager, CRO";
-  const sites = "LinkedIn (linkedin.com/jobs), APEC (apec.fr), Cadremploi (cadremploi.fr), Welcome to the Jungle (welcometothejungle.com), Indeed (indeed.fr)";
-  const industries = "digital, publicité/adtech, tech, médias";
-  const prompt = `Recherche sur le web des offres d'emploi RÉCENTES (moins de 14 jours si possible) en France pour les postes suivants : ${roles}. ` +
-    `Cherche spécifiquement sur ces sites : ${sites}. ` +
-    `Secteurs cibles : ${industries} (startups, scale-ups, groupes établis — pas de limite de taille d'entreprise). ` +
-    `Pour chaque offre trouvée, l'URL doit pointer directement vers l'annonce (pas vers une page de recherche générique). ` +
-    `Si tu ne trouves rien de fiable et récent, réponds avec un tableau vide.\n\n` +
-    `Réponds UNIQUEMENT avec un tableau JSON (aucun texte autour, aucun markdown), maximum 15 éléments, chaque élément au format :\n` +
-    `{"role":"intitulé du poste tel qu'annoncé","company":"nom de l'entreprise","link":"URL directe de l'offre (obligatoire, jamais vide)","source":"nom du site (LinkedIn, APEC, Cadremploi, Welcome to the Jungle, Indeed...)","note":"résumé en une phrase"}`;
+  // Une recherche par site, en parallèle. Chaque échec est capturé
+  // individuellement : un site qui plante (timeout, erreur API) ne bloque
+  // jamais les résultats des autres sites.
+  const results = await Promise.all(CAREER_SITES.map(async site => {
+    try {
+      const text = await callClaudeWithSearch(apiKey, careerPromptFor(site), fetchImpl);
+      return { site: site.name, items: extractJsonArray(text), error: null };
+    } catch (e) {
+      return { site: site.name, items: [], error: e.message };
+    }
+  }));
 
-  let suggestions = [];
-  try {
-    const text = await callClaudeWithSearch(apiKey, prompt, fetchImpl);
-    suggestions = extractJsonArray(text);
-  } catch (e) {
-    return { skipped: true, reason: e.message };
+  const allFailed = results.every(r => r.error);
+  if (allFailed) {
+    return { skipped: true, reason: results[0]?.error || "Tous les sites ont échoué" };
   }
 
   const existing = (await store.get("career-suggestions")) || [];
   const existingIds = new Set(existing.map(s => s.id));
   const today = new Date().toISOString().slice(0, 10);
   let added = 0;
-  for (const s of suggestions) {
-    if (!s || typeof s !== "object" || !s.company || !s.role) continue;
-    // Une suggestion sans lien direct vers l'offre est inutile pour Rodolph
-    // (le but est de pouvoir cliquer et postuler) — on l'ignore.
-    if (!s.link || typeof s.link !== "string" || !/^https?:\/\//i.test(s.link)) continue;
-    const id = hashId(`${s.company}|${s.role}|${s.link}`.slice(0, 200));
-    if (existingIds.has(id)) continue;
-    existing.unshift({ id, role: String(s.role).slice(0, 120), company: String(s.company).slice(0, 120), link: s.link, source: s.source || "", note: (s.note || "").slice(0, 300), date: today });
-    existingIds.add(id);
-    added++;
+  for (const { items } of results) {
+    for (const s of items) {
+      if (!s || typeof s !== "object" || !s.company || !s.role) continue;
+      // Une suggestion sans lien direct vers l'offre est inutile pour Rodolph
+      // (le but est de pouvoir cliquer et postuler) — on l'ignore.
+      if (!s.link || typeof s.link !== "string" || !/^https?:\/\//i.test(s.link)) continue;
+      const id = hashId(`${s.company}|${s.role}|${s.link}`.slice(0, 200));
+      if (existingIds.has(id)) continue;
+      existing.unshift({ id, role: String(s.role).slice(0, 120), company: String(s.company).slice(0, 120), link: s.link, source: s.source || "", note: (s.note || "").slice(0, 300), date: today });
+      existingIds.add(id);
+      added++;
+    }
   }
-  const capped = existing.slice(0, 120);
+  const capped = existing.slice(0, 150);
   await store.set("career-suggestions", capped);
   await store.set("career-last-run", today);
-  return { skipped: false, added, total: capped.length };
+  const sitesOk = results.filter(r => !r.error).map(r => r.site);
+  const sitesFailed = results.filter(r => r.error).map(r => r.site);
+  return { skipped: false, added, total: capped.length, sitesOk, sitesFailed };
 }
 
 module.exports = { runRadarScan, runCareerScan, hashId, extractJsonArray };
