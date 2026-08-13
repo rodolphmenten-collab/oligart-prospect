@@ -119,12 +119,20 @@ async function runRadarScan(deps) {
  * réellement. Une erreur sur un site n'empêche jamais les autres de
  * remonter des résultats — jamais ajoutées directement au pipeline de
  * l'utilisateur, c'est lui qui accepte ou ignore côté client.
+ *
+ * Maîtrise du coût : LinkedIn et APEC sont interrogés à chaque scan (les
+ * deux sources prioritaires), plus UN site supplémentaire tournant parmi
+ * Cadremploi / Welcome to the Jungle / Indeed (rotation à chaque exécution).
+ * Ça ramène le scan de 5 à 3 appels IA, tout en couvrant les 5 sites sur la
+ * durée si Rodolph relance régulièrement.
  */
 const CAREER_ROLES = "VP of Sales, Head of Sales, Country Manager, General Manager, CRO (Chief Revenue Officer)";
 const CAREER_INDUSTRIES = "digital, publicité/adtech, tech, médias";
-const CAREER_SITES = [
+const CAREER_PRIORITY_SITES = [
   { name: "LinkedIn", domain: "linkedin.com/jobs" },
-  { name: "APEC", domain: "apec.fr" },
+  { name: "APEC", domain: "apec.fr" }
+];
+const CAREER_ROTATING_SITES = [
   { name: "Cadremploi", domain: "cadremploi.fr" },
   { name: "Welcome to the Jungle", domain: "welcometothejungle.com" },
   { name: "Indeed", domain: "indeed.fr" }
@@ -144,10 +152,15 @@ async function runCareerScan(deps) {
   const { store, fetchImpl, apiKey } = deps;
   if (!apiKey) return { skipped: true, reason: "ANTHROPIC_API_KEY non configurée" };
 
+  const cursor = (await store.get("career-site-cursor")) || 0;
+  const rotatingSite = CAREER_ROTATING_SITES[cursor % CAREER_ROTATING_SITES.length];
+  const nextCursor = (cursor + 1) % CAREER_ROTATING_SITES.length;
+  const sitesToScan = [...CAREER_PRIORITY_SITES, rotatingSite];
+
   // Une recherche par site, en parallèle. Chaque échec est capturé
   // individuellement : un site qui plante (timeout, erreur API) ne bloque
   // jamais les résultats des autres sites.
-  const results = await Promise.all(CAREER_SITES.map(async site => {
+  const results = await Promise.all(sitesToScan.map(async site => {
     try {
       const text = await callClaudeWithSearch(apiKey, careerPromptFor(site), fetchImpl);
       return { site: site.name, items: extractJsonArray(text), error: null };
@@ -181,6 +194,7 @@ async function runCareerScan(deps) {
   const capped = existing.slice(0, 150);
   await store.set("career-suggestions", capped);
   await store.set("career-last-run", today);
+  await store.set("career-site-cursor", nextCursor);
   const sitesOk = results.filter(r => !r.error).map(r => r.site);
   const sitesFailed = results.filter(r => r.error).map(r => r.site);
   return { skipped: false, added, total: capped.length, sitesOk, sitesFailed };
