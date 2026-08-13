@@ -62,7 +62,8 @@ function init(){
    const data=await r.json();
    if(data.state==='done'){
     const radarMsg=data.radar?.skipped?`Radar : ${data.radar.reason}`:`Radar : ${data.radar.added} nouveau(x) signal(aux)`;
-    const careerMsg=data.career?.skipped?`Carrière : ${data.career.reason}`:`Carrière : ${data.career.added} nouvelle(s) suggestion(s)`;
+    const careerSitesNote=(!data.career?.skipped && data.career?.sitesFailed?.length)?` (échec sur ${data.career.sitesFailed.join(', ')})`:'';
+    const careerMsg=data.career?.skipped?`Carrière : ${data.career.reason}`:`Carrière : ${data.career.added} nouvelle(s) suggestion(s)${careerSitesNote}`;
     scanStatus.textContent=`${radarMsg} · ${careerMsg}`;
     scanBtn.disabled=false;
     if(window.Oligart)window.Oligart.toast('Scan terminé');
