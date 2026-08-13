@@ -84,7 +84,7 @@ function init(){
    }catch(e){
     // Jamais bloquant : une erreur ici (fonction pas déployée, quota, etc.)
     // affiche juste un message clair, sans casser le reste de la page.
-    scanStatus.textContent="Scan indisponible pour le moment ("+(e.message||'erreur inconnue')+"). Les scans planifiés quotidiens continueront de tourner normalement.";
+    scanStatus.textContent="Scan indisponible pour le moment ("+(e.message||'erreur inconnue')+"). Réessaie plus tard depuis ce bouton.";
     scanBtn.disabled=false;
    }
   };
