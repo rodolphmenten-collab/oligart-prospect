@@ -20,15 +20,20 @@ function safeGetStore() {
   try { return getStore("oligart-scan"); }
   catch (e) {
     console.warn("[oligart] getStore() auto failed:", e.message);
-    if (process.env.BLOBS_SITE_ID && process.env.BLOBS_TOKEN) {
+    // SITE_ID est fourni automatiquement par Netlify sur toutes les fonctions
+    // (pas besoin d'aller le chercher manuellement) ; seul BLOBS_TOKEN doit
+    // être configuré à la main (Personal access token Netlify).
+    const siteID = process.env.SITE_ID;
+    const token = process.env.BLOBS_TOKEN;
+    if (siteID && token) {
       try {
-        return getStore({ name: "oligart-scan", siteID: process.env.BLOBS_SITE_ID, token: process.env.BLOBS_TOKEN });
+        return getStore({ name: "oligart-scan", siteID, token });
       } catch (e2) {
-        console.warn("[oligart] getStore() explicite (BLOBS_SITE_ID/BLOBS_TOKEN) a aussi échoué:", e2.message);
+        console.warn("[oligart] getStore() explicite (SITE_ID/BLOBS_TOKEN) a aussi échoué:", e2.message);
         return null;
       }
     }
-    console.warn("[oligart] BLOBS_SITE_ID/BLOBS_TOKEN non configurés — impossible de contourner l'échec de l'injection automatique.");
+    console.warn("[oligart] BLOBS_TOKEN non configuré — impossible de contourner l'échec de l'injection automatique.");
     return null;
   }
 }
