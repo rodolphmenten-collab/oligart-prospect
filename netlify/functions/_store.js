@@ -5,14 +5,32 @@
 // et set() échoue silencieusement plutôt que de faire planter l'appelant.
 // Toute erreur rencontrée est quand même journalisée (console.warn) pour
 // rester diagnosticable depuis les logs de fonctions Netlify.
+//
+// Contournement d'un problème connu côté Netlify : l'injection automatique
+// du contexte Blobs (siteID/token) échoue parfois en production même avec
+// un usage par ailleurs correct (getStore() appelé dans le handler, pas au
+// chargement du module) — voir https://github.com/netlify/blobs/issues/175
+// et plusieurs signalements similaires sur le forum Netlify. On tente
+// d'abord l'injection automatique ; si elle échoue, on retombe sur une
+// configuration explicite via BLOBS_SITE_ID/BLOBS_TOKEN (variables
+// d'environnement à renseigner manuellement sur Netlify).
 const { getStore } = require("@netlify/blobs");
 
-// getStore() peut lever une exception SYNCHRONE si le contexte Netlify Blobs
-// n'est pas configuré (ex. exécution locale, tests). On la neutralise ici :
-// mieux vaut un store qui répond "vide" plutôt qu'une fonction qui plante.
 function safeGetStore() {
   try { return getStore("oligart-scan"); }
-  catch (e) { console.warn("[oligart] getStore() failed:", e.message); return null; }
+  catch (e) {
+    console.warn("[oligart] getStore() auto failed:", e.message);
+    if (process.env.BLOBS_SITE_ID && process.env.BLOBS_TOKEN) {
+      try {
+        return getStore({ name: "oligart-scan", siteID: process.env.BLOBS_SITE_ID, token: process.env.BLOBS_TOKEN });
+      } catch (e2) {
+        console.warn("[oligart] getStore() explicite (BLOBS_SITE_ID/BLOBS_TOKEN) a aussi échoué:", e2.message);
+        return null;
+      }
+    }
+    console.warn("[oligart] BLOBS_SITE_ID/BLOBS_TOKEN non configurés — impossible de contourner l'échec de l'injection automatique.");
+    return null;
+  }
 }
 
 function scanStore() {
