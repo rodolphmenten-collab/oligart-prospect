@@ -19,15 +19,24 @@ explicite) si une donnée manque ou qu'un appel réseau échoue.**
 
 1. **Dashboard** — métriques clés, relances dues, opportunités carrière (pipeline),
    activité récente (fusion outreach + signaux marché).
-2. **Base prospects** — 166 annonceurs PME françaises (objectif 250, en cours
-   d'extension par lots vérifiés), classées par typologie (secteur : Mode,
-   Beauté, Restauration rapide, Assurance & Banque, Auto & Entretien,
-   Immobilier, Optique, Éducation, Bricolage, Hôtellerie, etc.). Ce sont des
-   réseaux franchisés avec un budget média digital significatif (100 à
-   500k€/an), positionnement Oligart : les aider à structurer leurs achats
-   media en direct, sans frais d'intermédiation agence. Pas de nom de
-   décideur pré-rempli (donnée non disponible à la source) — à enrichir
-   progressivement depuis chaque fiche.
+2. **Base prospects** — 244 entreprises françaises et internationales (objectif
+   250, quasiment atteint), classées par typologie sur 4 catégories issues du
+   fichier de sourcing de Rodolph :
+   - **Annonceurs PME françaises** (166) — réseaux franchisés avec budget
+     média digital significatif (100-500k€/an), classés par secteur (Mode,
+     Beauté, Restauration rapide, Assurance & Banque, Auto & Entretien,
+     Immobilier, Optique, Éducation, Bricolage, Hôtellerie, etc.)
+   - **Annonceurs tourisme international** (43) — offices de tourisme,
+     compagnies aériennes, chaînes hôtelières communiquant en France
+   - **Agences média indépendantes** (21) — agences de conseil/achat média
+     digital françaises
+   - **Agences communication santé & pharma** (14) — agences spécialisées
+     labos/biotech/medtech
+   
+   Positionnement Oligart : aider ces annonceurs à structurer leurs achats
+   media en direct, sans frais d'intermédiation agence. Noms de décideurs
+   pré-remplis uniquement quand la donnée source les fournissait (rare) —
+   jamais inventés.
 3. **Top Priorités** — les 30 entreprises au score le plus élevé.
 4. **Outreach** — séquence multi-canal (Email → LinkedIn → Relance email → Téléphone),
    historique de contact par prospect, hub listant les actions dues.
