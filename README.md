@@ -34,6 +34,17 @@ explicite) si une donnée manque ou qu'un appel réseau échoue.**
      digital françaises
    - **Agences Pharma** (14) — agences spécialisées labos/biotech/medtech
 
+   **Sans agence media identifiée** (14, dont Club Med) — sous-ensemble
+   transversal (champ `hasAgency`, pas une 5e catégorie) : annonceurs dont
+   la donnée source confirme explicitement l'absence d'agence média en
+   France, ou dont l'internalisation est documentée publiquement (Club Med,
+   sourcé via un article e-marketing.fr sur la vague d'internalisation).
+   Filtrable via une case à cocher dédiée sur Prospects, et affiché en
+   widget sur le Dashboard. **Volontairement pas une grosse liste inventée** :
+   ce type de donnée n'est presque jamais publié par les marques elles-mêmes,
+   donc la liste reste courte et 100% vérifiée plutôt que gonflée par des
+   suppositions.
+
    Positionnement Oligart : aider ces annonceurs à structurer leur stratégie
    d'achat media 360° (display, social, vidéo, DOOH, audio, programmatique)
    en direct, avec des honoraires transparents — repris dans le message de

@@ -35,7 +35,17 @@ function renderActivity(){
  el.innerHTML=recent.length?recent.map(e=>`<div class="row"><b>${esc(e.label)}</b><span></span><span></span><span class="muted">${esc(e.date)}</span></div>`).join(''):'<p class="muted">Aucune activité enregistrée pour l’instant.</p>';
 }
 
-function renderDashboardExtra(){renderOpportunities();renderActivity()}
+function renderNoAgency(){
+ const el=document.querySelector('#noAgencyWidget');
+ if(!el||!window.Oligart)return;
+ const {getProspects,esc,openProspect}=window.Oligart;
+ const list=getProspects().filter(p=>p.hasAgency===false).sort((a,b)=>b.score-a.score);
+ if(!list.length){el.innerHTML='<p class="muted">Aucun annonceur sans agence identifié pour l’instant.</p>';return}
+ el.innerHTML=list.map(p=>`<div class="row row-5" data-id="${esc(p.id)}"><b>${esc(p.company)}</b><span>${esc(p.sector)}</span><span class="score">${p.score}</span><span class="pill">${esc(p.priority)}</span><span></span></div>`).join('');
+ el.querySelectorAll('[data-id]').forEach(r=>r.onclick=()=>openProspect(r.dataset.id));
+}
+
+function renderDashboardExtra(){renderOpportunities();renderActivity();renderNoAgency()}
 
 function init(){
  renderDashboardExtra(); // premier rendu immédiat
