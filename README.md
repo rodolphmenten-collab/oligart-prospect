@@ -190,6 +190,25 @@ Toutes les données de prospection restent **sur l'appareil de l'utilisateur**
 Aucune base de données distante. Utiliser « Exporter CSV » pour sauvegarder
 ou migrer les données.
 
+## Mise à jour de la base de prospects (fusion intelligente)
+
+Quand `data.js` est mis à jour (nouveaux prospects, nouveaux champs comme
+`hasAgency`), l'app **fusionne automatiquement** la nouvelle base avec les
+données déjà sauvegardées localement, à chaque chargement — plus besoin de
+cliquer sur quoi que ce soit :
+
+- Les champs "possédés" par l'utilisateur (statut, priorité, contact, CEO,
+  Head of Sales, notes, "pourquoi", relance, historique, signaux...) sont
+  **toujours préservés** depuis le stockage local.
+- Les champs structurels (nom, secteur, catégorie, score, `hasAgency`...)
+  se mettent à jour automatiquement depuis la nouvelle base.
+- Les prospects ajoutés à la main (bouton « + Ajouter ») ne sont jamais
+  perdus, même s'ils n'existent pas dans le fichier source.
+
+Le bouton « Réinitialisation complète » reste disponible en dernier recours
+(efface vraiment tout), mais ne devrait normalement plus jamais être
+nécessaire pour récupérer une mise à jour de la base.
+
 ## Limites connues
 
 - Persistance des prospects/pipeline personnel/paramètres en local uniquement
