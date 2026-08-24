@@ -2,7 +2,8 @@
 
 Assistant de développement commercial et de carrière pour Rodolph : trouver des
 missions de conseil auprès d'annonceurs PME pour structurer leurs achats media
-sans frais d'intermédiation agence, trouver des postes de direction
+en direct (honoraires transparents, format plus flexible qu'une agence
+traditionnelle), trouver des postes de direction
 commerciale, détecter les entreprises prometteuses et contacter les bons
 décideurs.
 
@@ -21,22 +22,29 @@ explicite) si une donnée manque ou qu'un appel réseau échoue.**
    activité récente (fusion outreach + signaux marché).
 2. **Base prospects** — 244 entreprises françaises et internationales (objectif
    250, quasiment atteint), classées par typologie sur 4 catégories issues du
-   fichier de sourcing de Rodolph :
-   - **Annonceurs PME françaises** (166) — réseaux franchisés avec budget
-     média digital significatif (100-500k€/an), classés par secteur (Mode,
-     Beauté, Restauration rapide, Assurance & Banque, Auto & Entretien,
-     Immobilier, Optique, Éducation, Bricolage, Hôtellerie, etc.)
-   - **Annonceurs tourisme international** (43) — offices de tourisme,
-     compagnies aériennes, chaînes hôtelières communiquant en France
-   - **Agences média indépendantes** (21) — agences de conseil/achat média
+   fichier de sourcing de Rodolph — **filtrables directement dans l'interface**
+   (menu déroulant catégorie sur Prospects) :
+   - **Franchises PME** (166) — réseaux franchisés avec budget média digital
+     significatif (100-500k€/an), classés par secteur (Mode, Beauté,
+     Restauration rapide, Assurance & Banque, Auto & Entretien, Immobilier,
+     Optique, Éducation, Bricolage, Hôtellerie, etc.)
+   - **Tourisme International** (43) — offices de tourisme, compagnies
+     aériennes, chaînes hôtelières communiquant en France
+   - **Agences Média Indépendantes** (21) — agences de conseil/achat média
      digital françaises
-   - **Agences communication santé & pharma** (14) — agences spécialisées
-     labos/biotech/medtech
-   
-   Positionnement Oligart : aider ces annonceurs à structurer leurs achats
-   media en direct, sans frais d'intermédiation agence. Noms de décideurs
-   pré-remplis uniquement quand la donnée source les fournissait (rare) —
-   jamais inventés.
+   - **Agences Pharma** (14) — agences spécialisées labos/biotech/medtech
+
+   Positionnement Oligart : aider ces annonceurs à structurer leur stratégie
+   d'achat media 360° (display, social, vidéo, DOOH, audio, programmatique)
+   en direct, avec des honoraires transparents — repris dans le message de
+   prospection pré-rempli et tous les prompts de l'assistant IA.
+
+   **140/244 prospects ont un contact réel pré-rempli** (nom, LinkedIn,
+   parfois email/téléphone), extrait des fichiers sources de Rodolph — jamais
+   inventé. Quand plusieurs profils LinkedIn figuraient sur une même ligne,
+   le bon profil est associé au bon nom par correspondance de texte ; en cas
+   de doute, le champ reste vide plutôt que de risquer une mauvaise
+   attribution.
 3. **Top Priorités** — les 30 entreprises au score le plus élevé.
 4. **Outreach** — séquence multi-canal (Email → LinkedIn → Relance email → Téléphone),
    historique de contact par prospect, hub listant les actions dues.
