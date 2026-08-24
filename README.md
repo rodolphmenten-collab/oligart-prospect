@@ -1,8 +1,10 @@
 # Oligart Prospect — Copilot commercial & carrière
 
 Assistant de développement commercial et de carrière pour Rodolph : trouver des
-missions de conseil, trouver des postes de direction commerciale, détecter les
-entreprises prometteuses et contacter les bons décideurs.
+missions de conseil auprès d'annonceurs PME pour structurer leurs achats media
+sans frais d'intermédiation agence, trouver des postes de direction
+commerciale, détecter les entreprises prometteuses et contacter les bons
+décideurs.
 
 Stack volontairement simple : HTML/CSS/JS natif (aucun framework, aucun build
 step), stockage local (`localStorage`), et deux fonctions Netlify pour l'envoi
@@ -17,13 +19,15 @@ explicite) si une donnée manque ou qu'un appel réseau échoue.**
 
 1. **Dashboard** — métriques clés, relances dues, opportunités carrière (pipeline),
    activité récente (fusion outreach + signaux marché).
-2. **Base prospects** — 248 entreprises (objectif 300-400, en cours d'extension
-   par lots vérifiés), avec CEO, Head of Sales, LinkedIn,
-   email professionnel (quand disponible), site, notes, timeline de contacts,
-   statut de pipeline. Couvre média/tech/internet/influence/entertainment
-   ainsi que le marché automobile classique/collection (maisons de ventes,
-   assurance, restauration, pièces détachées, expertise, transport spécialisé,
-   marketplaces, médias spécialisés).
+2. **Base prospects** — 166 annonceurs PME françaises (objectif 250, en cours
+   d'extension par lots vérifiés), classées par typologie (secteur : Mode,
+   Beauté, Restauration rapide, Assurance & Banque, Auto & Entretien,
+   Immobilier, Optique, Éducation, Bricolage, Hôtellerie, etc.). Ce sont des
+   réseaux franchisés avec un budget média digital significatif (100 à
+   500k€/an), positionnement Oligart : les aider à structurer leurs achats
+   media en direct, sans frais d'intermédiation agence. Pas de nom de
+   décideur pré-rempli (donnée non disponible à la source) — à enrichir
+   progressivement depuis chaque fiche.
 3. **Top Priorités** — les 30 entreprises au score le plus élevé.
 4. **Outreach** — séquence multi-canal (Email → LinkedIn → Relance email → Téléphone),
    historique de contact par prospect, hub listant les actions dues.
