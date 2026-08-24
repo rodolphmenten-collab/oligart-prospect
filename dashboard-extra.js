@@ -39,9 +39,14 @@ function renderNoAgency(){
  const el=document.querySelector('#noAgencyWidget');
  if(!el||!window.Oligart)return;
  const {getProspects,esc,openProspect}=window.Oligart;
- const list=getProspects().filter(p=>p.hasAgency===false).sort((a,b)=>b.score-a.score);
- if(!list.length){el.innerHTML='<p class="muted">Aucun annonceur sans agence identifié pour l’instant.</p>';return}
- el.innerHTML=list.map(p=>`<div class="row row-5" data-id="${esc(p.id)}"><b>${esc(p.company)}</b><span>${esc(p.sector)}</span><span class="score">${p.score}</span><span class="pill">${esc(p.priority)}</span><span></span></div>`).join('');
+ const confirmed=getProspects().filter(p=>p.hasAgency===false).sort((a,b)=>b.score-a.score);
+ const likely=getProspects().filter(p=>p.likelyNoAgency).sort((a,b)=>b.score-a.score).slice(0,10);
+ if(!confirmed.length&&!likely.length){el.innerHTML='<p class="muted">Aucun annonceur sans agence identifié pour l’instant.</p>';return}
+ const row=(p,tag)=>`<div class="row row-5" data-id="${esc(p.id)}"><b>${esc(p.company)}</b><span>${esc(p.sector)}</span><span class="score">${p.score}</span><span class="pill">${tag}</span><span></span></div>`;
+ let html='';
+ if(confirmed.length)html+=`<p class="muted" style="margin:0 0 6px"><b>Confirmé</b> (${confirmed.length})</p>`+confirmed.map(p=>row(p,'Confirmé')).join('');
+ if(likely.length)html+=`<p class="muted" style="margin:14px 0 6px"><b>Probable</b> — PME budget modeste, top 10 sur ${getProspects().filter(p=>p.likelyNoAgency).length}</p>`+likely.map(p=>row(p,'Probable')).join('');
+ el.innerHTML=html;
  el.querySelectorAll('[data-id]').forEach(r=>r.onclick=()=>openProspect(r.dataset.id));
 }
 

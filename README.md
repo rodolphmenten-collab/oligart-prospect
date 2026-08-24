@@ -34,16 +34,27 @@ explicite) si une donnée manque ou qu'un appel réseau échoue.**
      digital françaises
    - **Agences Pharma** (14) — agences spécialisées labos/biotech/medtech
 
-   **Sans agence media identifiée** (14, dont Club Med) — sous-ensemble
-   transversal (champ `hasAgency`, pas une 5e catégorie) : annonceurs dont
-   la donnée source confirme explicitement l'absence d'agence média en
-   France, ou dont l'internalisation est documentée publiquement (Club Med,
-   sourcé via un article e-marketing.fr sur la vague d'internalisation).
-   Filtrable via une case à cocher dédiée sur Prospects, et affiché en
-   widget sur le Dashboard. **Volontairement pas une grosse liste inventée** :
-   ce type de donnée n'est presque jamais publié par les marques elles-mêmes,
-   donc la liste reste courte et 100% vérifiée plutôt que gonflée par des
-   suppositions.
+   **Sans agence media identifiée** — sous-ensemble transversal (pas une 5e
+   catégorie), avec deux niveaux de certitude clairement distingués dans
+   l'interface (filtre dédié sur Prospects + widget Dashboard) :
+   - **Confirmé (14, dont Club Med)** — champ `hasAgency`. Annonceurs dont
+     la donnée source confirme explicitement l'absence d'agence média en
+     France, ou dont l'internalisation est documentée publiquement (Club
+     Med, sourcé via un article e-marketing.fr sur la vague
+     d'internalisation).
+   - **Probable (127)** — champ `likelyNoAgency`. Franchises PME à budget
+     média modeste (<300k€/an) sans agence mentionnée dans le fichier
+     source. **C'est une déduction, pas une donnée confirmée** — les
+     agences full-service ciblent statistiquement plutôt les comptes à
+     budget plus important, mais rien ne garantit qu'une franchise donnée
+     n'a vraiment aucune agence. L'unique franchise du fichier avec une
+     agence explicitement mentionnée (Midas → iProspect) est exclue de ce
+     calcul.
+
+   Cette distinction confirmé/probable est volontaire : la version "confirmé"
+   reste courte et 100% vérifiée (ce type de donnée n'est presque jamais
+   publié par les marques), la version "probable" est plus large mais
+   toujours annoncée comme une hypothèse, jamais présentée comme un fait.
 
    Positionnement Oligart : aider ces annonceurs à structurer leur stratégie
    d'achat media 360° (display, social, vidéo, DOOH, audio, programmatique)
