@@ -34,9 +34,10 @@
  <div id="metrics" class="metrics"></div>
  <div class="two-col"><article class="panel"><div class="panel-head"><h3>Priorités</h3><button class="link-btn" data-go="pipeline">Tout voir</button></div><div id="topList"></div></article><article class="panel"><div class="panel-head"><h3>Relances</h3><button class="link-btn" data-go="today">Tout voir</button></div><div id="followList"></div></article></div>
  <div class="two-col" style="margin-top:16px"><article class="panel"><div class="panel-head"><h3>Opportunités</h3><button class="link-btn" data-go="career">Tout voir</button></div><div id="opportunitiesWidget"></div></article><article class="panel"><div class="panel-head"><h3>Activité récente</h3></div><div id="activityWidget"></div></article></div>
+ <div class="panel" style="margin-top:16px"><div class="panel-head"><h3>Sans agence media identifiée</h3><button class="link-btn" data-go="pipeline">Tout voir</button></div><p class="muted" style="margin:0 0 12px">Annonceurs dont la donnée source confirme l'absence d'agence — approche directe la plus pertinente.</p><div id="noAgencyWidget"></div></div>
 </section>
 <section id="pipeline" class="view">
- <div class="toolbar"><input id="search" placeholder="Rechercher une entreprise ou un secteur"><select id="categoryFilter"><option value="">Toutes catégories</option></select><select id="priorityFilter"><option value="">Toutes priorités</option><option>A</option><option>B</option><option>C</option></select><select id="statusFilter"></select></div>
+ <div class="toolbar"><input id="search" placeholder="Rechercher une entreprise ou un secteur"><select id="categoryFilter"><option value="">Toutes catégories</option></select><select id="priorityFilter"><option value="">Toutes priorités</option><option>A</option><option>B</option><option>C</option></select><select id="statusFilter"></select><select id="agencyFilter"><option value="">Agence : indifférent</option><option value="confirmed">Sans agence confirmée</option><option value="likely">Sans agence probable (PME)</option><option value="any">Sans agence (confirmé + probable)</option></select></div>
  <div class="panel"><div id="table"></div></div>
 </section>
 <section id="priorities" class="view">

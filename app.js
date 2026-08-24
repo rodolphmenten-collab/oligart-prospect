@@ -14,6 +14,8 @@ try{const stored=JSON.parse(localStorage.getItem('oligart-clean-data')||'null');
 function migrateProspect(p){
  p.ceoName??='';p.ceoLinkedin??='';p.headOfSalesName??='';p.headOfSalesLinkedin??='';p.headOfSalesEmail??='';p.phone??='';
  p.category??='Franchises PME';
+ if(p.hasAgency===undefined)p.hasAgency=null;
+ if(p.likelyNoAgency===undefined)p.likelyNoAgency=false;
  if(!Array.isArray(p.timeline))p.timeline=[];
  if(!Array.isArray(p.signals))p.signals=[];
  if(typeof p.sequenceStep!=='number')p.sequenceStep=0;
@@ -27,7 +29,19 @@ function esc(v=''){return String(v).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt
 function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('show');setTimeout(()=>e.classList.remove('show'),2200)}
 function metric(n,l){return `<div class="metric"><b>${n}</b><span>${l}</span></div>`}
 function row(p){return `<div class="row" data-id="${esc(p.id)}"><b>${esc(p.company)}</b><span>${esc(p.sector)}</span><span class="score">${p.score}</span><span class="pill">${esc(p.status)}</span></div>`}
-function filtered(){const q=($('#search')?.value||'').toLowerCase(), pr=$('#priorityFilter')?.value||'', st=$('#statusFilter')?.value||'', cat=$('#categoryFilter')?.value||'';return prospects.filter(p=>(!q||`${p.company} ${p.sector}`.toLowerCase().includes(q))&&(!pr||p.priority===pr)&&(!st||p.status===st)&&(!cat||p.category===cat))}
+function filtered(){
+ const q=($('#search')?.value||'').toLowerCase(), pr=$('#priorityFilter')?.value||'', st=$('#statusFilter')?.value||'', cat=$('#categoryFilter')?.value||'', ag=$('#agencyFilter')?.value||'';
+ return prospects.filter(p=>{
+  if(q&&!`${p.company} ${p.sector}`.toLowerCase().includes(q))return false;
+  if(pr&&p.priority!==pr)return false;
+  if(st&&p.status!==st)return false;
+  if(cat&&p.category!==cat)return false;
+  if(ag==='confirmed'&&p.hasAgency!==false)return false;
+  if(ag==='likely'&&!p.likelyNoAgency)return false;
+  if(ag==='any'&&!(p.hasAgency===false||p.likelyNoAgency))return false;
+  return true;
+ });
+}
 function renderDashboard(){
  $('#heroCount').textContent=prospects.length;
  const contact=prospects.filter(p=>p.status==='Contacté').length, replies=prospects.filter(p=>p.status==='Réponse reçue').length, meetings=prospects.filter(p=>p.status==='RDV pris').length;
@@ -75,7 +89,7 @@ $('#categoryFilter').innerHTML='<option value="">Toutes catégories</option>'+CA
 // Bug corrigé : après un filtrage (recherche/priorité/statut), il faut ré-attacher
 // les clics sur les nouvelles lignes affichées, sinon la fiche ne s'ouvre plus.
 function renderTableAndBind(){renderTable();bindRows()}
-['search','priorityFilter','statusFilter','categoryFilter'].forEach(id=>$('#'+id).addEventListener(id==='search'?'input':'change',renderTableAndBind));
+['search','priorityFilter','statusFilter','categoryFilter','agencyFilter'].forEach(id=>$('#'+id).addEventListener(id==='search'?'input':'change',renderTableAndBind));
 $('#addBtn').onclick=()=>$('#modal').classList.add('open');$('#addForm').onsubmit=e=>{e.preventDefault();const f=new FormData(e.target),company=f.get('company');prospects.unshift({id:crypto.randomUUID(),company,sector:f.get('sector')||'',country:'France',model:'B2B',size:'',targetRole:f.get('targetRole')||'CEO / CRO',why:'',priority:f.get('priority')||'A',score:75,status:'À contacter',website:f.get('website')||`https://www.google.com/search?q=${encodeURIComponent(company)}`,companyLinkedin:`https://www.linkedin.com/search/results/companies/?keywords=${encodeURIComponent(company)}`,leaderSearch:`https://www.google.com/search?q=${encodeURIComponent(company+' CEO LinkedIn')}`,contactName:'',contactEmail:'',contactLinkedin:'',lastContact:'',nextFollowUp:'',notes:'',jobsUrl:'',jobs:[]});e.target.reset();$('#modal').classList.remove('open');save();toast('Entreprise ajoutée')};
 $('#resetBtn').onclick=()=>{if(confirm(`Restaurer les ${window.OLIGART_SEED.length} prospects d'origine ? Tes modifications locales (statuts, notes, contacts) seront perdues.`)){prospects=clone(window.OLIGART_SEED);save();toast('Base restaurée')}};
 $('#exportBtn').onclick=()=>{const cols=['company','sector','priority','score','status','contactName','contactEmail','contactLinkedin','nextFollowUp','notes'];const csv=[cols.join(','),...prospects.map(p=>cols.map(k=>'"'+String(p[k]||'').replaceAll('"','""')+'"').join(','))].join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='oligart-prospects.csv';a.click();URL.revokeObjectURL(a.href)};
