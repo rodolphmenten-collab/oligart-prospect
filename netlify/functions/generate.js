@@ -8,7 +8,7 @@ const MODEL = process.env.ANTHROPIC_MODEL || "claude-sonnet-4-6";
 const PROMPTS = {
   email: (p) =>
     `Rédige un email de prospection court (120 mots max), en français, professionnel mais chaleureux, ` +
-    `signé par Rodolph Menten (Oligart, accompagnement stratégie d'achat media 360° — display, social, vidéo, DOOH, audio, programmatique — en structurant les achats en direct, sans frais d'intermédiation agence). ` +
+    `signé par Rodolph Menten (Oligart, accompagnement stratégie d'achat media 360° — display, social, vidéo, DOOH, audio, programmatique — en structurant les achats en direct, avec des honoraires transparents). ` +
     `Destinataire : ${p.targetRole || "décideur"} de ${p.company} (secteur : ${p.sector || "n/c"}). ` +
     `Contexte : ${p.why || "aucun contexte spécifique fourni"}. ` +
     `Notes internes : ${p.notes || "aucune"}. ` +
@@ -16,10 +16,10 @@ const PROMPTS = {
   linkedin_dm: (p) =>
     `Rédige un message LinkedIn court (500 caractères max), en français, direct et personnalisé, ` +
     `pour approcher ${p.ceoName || p.targetRole || "le décideur"} de ${p.company} au sujet de sa stratégie média digitale. ` +
-    `Contexte : ${p.why || "aucun contexte spécifique"}. Signé Rodolph Menten (Oligart, achat media 360° en direct, sans frais d'agence).`,
+    `Contexte : ${p.why || "aucun contexte spécifique"}. Signé Rodolph Menten (Oligart, achat media 360° en direct, honoraires transparents).`,
   pitch: (p) =>
     `Rédige un pitch oral de 3 phrases (pour un appel de 20 minutes), en français, expliquant ` +
-    `pourquoi Oligart (accompagnement stratégie d'achat media 360° — display, social, vidéo, DOOH, audio, programmatique — en direct, sans frais d'intermédiation agence) ` +
+    `pourquoi Oligart (accompagnement stratégie d'achat media 360° — display, social, vidéo, DOOH, audio, programmatique — en direct, avec des honoraires transparents) ` +
     `peut aider ${p.company} (secteur ${p.sector || "n/c"}). Contexte : ${p.why || "aucun"}.`,
   meeting_prep: (p) =>
     `Prépare une fiche de préparation de rendez-vous (en français, format à puces courtes) pour un ` +

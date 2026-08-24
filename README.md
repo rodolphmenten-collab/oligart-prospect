@@ -2,7 +2,8 @@
 
 Assistant de développement commercial et de carrière pour Rodolph : trouver des
 missions de conseil auprès d'annonceurs PME pour structurer leurs achats media
-sans frais d'intermédiation agence, trouver des postes de direction
+en direct (honoraires transparents, format plus flexible qu'une agence
+traditionnelle), trouver des postes de direction
 commerciale, détecter les entreprises prometteuses et contacter les bons
 décideurs.
 
@@ -35,7 +36,7 @@ explicite) si une donnée manque ou qu'un appel réseau échoue.**
 
    Positionnement Oligart : aider ces annonceurs à structurer leur stratégie
    d'achat media 360° (display, social, vidéo, DOOH, audio, programmatique)
-   en direct, sans frais d'intermédiation agence — repris dans le message de
+   en direct, avec des honoraires transparents — repris dans le message de
    prospection pré-rempli et tous les prompts de l'assistant IA.
 
    **140/244 prospects ont un contact réel pré-rempli** (nom, LinkedIn,
