@@ -7,7 +7,33 @@ const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const clone=o=>JSON.parse(JSON.stringify(o));
 const today=(n=0)=>{const d=new Date();d.setDate(d.getDate()+n);return d.toISOString().slice(0,10)};
 let prospects=[]; let selected=null;
-try{const stored=JSON.parse(localStorage.getItem('oligart-clean-data')||'null'); prospects=Array.isArray(stored)&&stored.length?stored:clone(window.OLIGART_SEED)}catch{prospects=clone(window.OLIGART_SEED)}
+// Champs "possédés" par l'utilisateur : jamais écrasés par une mise à jour du
+// fichier source (data.js). Tout le reste (nom, secteur, catégorie, score,
+// why généré, hasAgency...) se met à jour automatiquement depuis la nouvelle
+// base à chaque chargement -- exactement ce qui manquait jusqu'ici : avant ce
+// correctif, il fallait cliquer "Restaurer" pour voir les nouveaux prospects,
+// ce qui effaçait au passage tout le travail de prospection déjà fait.
+const EDITABLE_FIELDS=['status','priority','contactName','contactEmail','contactLinkedin','ceoName','ceoLinkedin','headOfSalesName','headOfSalesLinkedin','headOfSalesEmail','phone','why','notes','targetRole','lastContact','nextFollowUp','timeline','signals','sequenceStep'];
+function smartMerge(seed,stored){
+ const storedById=new Map(stored.map(p=>[p.id,p]));
+ const merged=seed.map(seedP=>{
+  const out=clone(seedP);
+  const local=storedById.get(seedP.id);
+  if(local){
+   EDITABLE_FIELDS.forEach(f=>{if(local[f]!==undefined)out[f]=local[f]});
+   storedById.delete(seedP.id);
+  }
+  return out;
+ });
+ // Prospects ajoutés à la main par l'utilisateur (pas dans le fichier source,
+ // ex. via "+ Ajouter") : jamais perdus, toujours réinjectés tels quels.
+ storedById.forEach(p=>merged.push(p));
+ return merged;
+}
+try{
+ const stored=JSON.parse(localStorage.getItem('oligart-clean-data')||'null');
+ prospects=Array.isArray(stored)&&stored.length?smartMerge(window.OLIGART_SEED,stored):clone(window.OLIGART_SEED);
+}catch{prospects=clone(window.OLIGART_SEED)}
 // Migration défensive : les fiches sauvegardées avant l'ajout des nouveaux champs
 // (CEO, Head of Sales, timeline, signals...) sont complétées silencieusement,
 // sans jamais perdre les données existantes ni bloquer le rendu.
@@ -91,7 +117,7 @@ $('#categoryFilter').innerHTML='<option value="">Toutes catégories</option>'+CA
 function renderTableAndBind(){renderTable();bindRows()}
 ['search','priorityFilter','statusFilter','categoryFilter','agencyFilter'].forEach(id=>$('#'+id).addEventListener(id==='search'?'input':'change',renderTableAndBind));
 $('#addBtn').onclick=()=>$('#modal').classList.add('open');$('#addForm').onsubmit=e=>{e.preventDefault();const f=new FormData(e.target),company=f.get('company');prospects.unshift({id:crypto.randomUUID(),company,sector:f.get('sector')||'',country:'France',model:'B2B',size:'',targetRole:f.get('targetRole')||'CEO / CRO',why:'',priority:f.get('priority')||'A',score:75,status:'À contacter',website:f.get('website')||`https://www.google.com/search?q=${encodeURIComponent(company)}`,companyLinkedin:`https://www.linkedin.com/search/results/companies/?keywords=${encodeURIComponent(company)}`,leaderSearch:`https://www.google.com/search?q=${encodeURIComponent(company+' CEO LinkedIn')}`,contactName:'',contactEmail:'',contactLinkedin:'',lastContact:'',nextFollowUp:'',notes:'',jobsUrl:'',jobs:[]});e.target.reset();$('#modal').classList.remove('open');save();toast('Entreprise ajoutée')};
-$('#resetBtn').onclick=()=>{if(confirm(`Restaurer les ${window.OLIGART_SEED.length} prospects d'origine ? Tes modifications locales (statuts, notes, contacts) seront perdues.`)){prospects=clone(window.OLIGART_SEED);save();toast('Base restaurée')}};
+$('#resetBtn').onclick=()=>{if(confirm(`Réinitialisation complète : remet les ${window.OLIGART_SEED.length} prospects à zéro (perd TOUT ton travail : statuts, notes, contacts modifiés, historique). Normalement inutile désormais -- les nouveaux prospects/champs du fichier source se synchronisent automatiquement sans perdre tes données. À utiliser seulement en dernier recours. Continuer ?`)){prospects=clone(window.OLIGART_SEED);save();toast('Base réinitialisée')}};
 $('#exportBtn').onclick=()=>{const cols=['company','sector','priority','score','status','contactName','contactEmail','contactLinkedin','nextFollowUp','notes'];const csv=[cols.join(','),...prospects.map(p=>cols.map(k=>'"'+String(p[k]||'').replaceAll('"','""')+'"').join(','))].join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='oligart-prospects.csv';a.click();URL.revokeObjectURL(a.href)};
 renderAll();
 
