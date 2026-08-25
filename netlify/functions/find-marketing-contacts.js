@@ -22,7 +22,11 @@ exports.handler = async (event) => {
     if (!process.env.HUNTER_API_KEY) {
       return { statusCode: 501, body: JSON.stringify({ error: "HUNTER_API_KEY non configurée sur Netlify" }) };
     }
-    const params = new URLSearchParams({ api_key: process.env.HUNTER_API_KEY, limit: "20" });
+    // limit=10 : plafond du plan gratuit Hunter (25 recherches/mois, 10
+    // emails max par recherche de domaine). Une valeur plus haute déclenche
+    // une erreur explicite côté Hunter plutôt qu'une troncature silencieuse
+    // -- corrigé après l'avoir vu se produire en conditions réelles.
+    const params = new URLSearchParams({ api_key: process.env.HUNTER_API_KEY, limit: "10" });
     if (domain) params.set("domain", domain);
     else params.set("company", company);
 
