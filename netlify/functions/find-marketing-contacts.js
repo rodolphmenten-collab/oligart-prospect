@@ -1,45 +1,88 @@
-// Trouve automatiquement le décideur qui gère le budget media/pub (Directeur
-// Marketing, Directeur Media, Head of Digital...) via l'API Hunter.io
-// "Domain Search" (liste toutes les personnes connues sur un domaine avec
-// leur poste), contrairement à l'Email Finder qui cherche un nom déjà connu.
-// Nécessite HUNTER_API_KEY (plan gratuit disponible).
+// Trouve le décideur qui gère le budget media/pub (Directeur Marketing,
+// Directeur Media, Head of Digital...). Deux étapes indépendantes, chacune
+// pouvant réussir seule :
 //
-// Hunter ne fournit pas toujours le lien LinkedIn (champ souvent vide même
-// quand nom/email/poste sont connus). Quand c'est le cas, une recherche web
-// réelle via Tavily (tier gratuit permanent, 1000 crédits/mois, inscriptions
-// ouvertes -- contrairement à Google Custom Search qui est fermé aux
-// nouveaux comptes depuis 2026) complète automatiquement le profil,
-// restreinte au domaine linkedin.com. Optionnelle : sans TAVILY_API_KEY,
-// le LinkedIn reste simplement vide comme avant, jamais bloquant.
+// 1. LINKEDIN (le plus important, "pas dur à trouver" même à la main) :
+//    a. D'abord Hunter.io Domain Search (rapide, déjà indexé) si HUNTER_API_KEY
+//       est configurée -- peut donner nom + poste + parfois LinkedIn direct.
+//    b. Sinon, ou si Domain Search ne renvoie personne au bon poste, une
+//       vraie recherche web via Tavily (tier gratuit permanent, inscriptions
+//       ouvertes -- contrairement à Google Custom Search fermé aux nouveaux
+//       comptes depuis 2026) directement sur linkedin.com pour "Entreprise +
+//       Directeur Marketing/Media/Head of Digital...", dont on extrait le nom
+//       et le poste depuis le titre du résultat LinkedIn.
+// 2. EMAIL (bonus, jamais bloquant) : une fois un nom obtenu (peu importe la
+//    source), Hunter Email Finder est tenté pour cette personne précise. Si
+//    ça échoue ou si HUNTER_API_KEY est absente, le contact est quand même
+//    renvoyé avec email vide -- avoir le nom + LinkedIn est déjà exploitable.
 //
-// Honnêteté : ne renvoie que des personnes réellement trouvées par Hunter,
-// et un lien LinkedIn seulement si Tavily a un résultat qui matche
-// clairement le nom (jamais un lien deviné ou approximatif). Si personne
-// au poste recherché n'est trouvé sur le domaine, found:false avec la raison.
+// Honnêteté : found:true dès qu'un nom + LinkedIn réels sont identifiés,
+// même sans email. found:false uniquement si aucune des deux étapes n'a
+// rien donné du tout. Jamais de nom ou de lien inventé.
 const TARGET_ROLE_RE = /marketing|digital|m[ée]dia\b|media\b|communication|brand|acquisition|growth|publicit|advertis/i;
 const EXCLUDE_ROLE_RE = /\bceo\b|chief executive|founder|fondateur|pr[ée]sident|head of sales|sales director|directeur commercial|vp sales|account executive/i;
+const ROLE_QUERY_TERMS = '("Directeur Marketing" OR "Directeur Media" OR "Directeur de la Communication" OR "Head of Digital" OR "Head of Marketing" OR "Responsable Communication" OR "Responsable Marketing" OR "Chief Marketing Officer")';
 
-async function findLinkedinUrl(fetchImpl, name, company) {
-  if (!process.env.TAVILY_API_KEY || !name) return "";
+async function hunterDomainSearch(company, domain) {
+  if (!process.env.HUNTER_API_KEY) return [];
+  const params = new URLSearchParams({ api_key: process.env.HUNTER_API_KEY, limit: "10" });
+  if (domain) params.set("domain", domain); else params.set("company", company);
   try {
-    const r = await fetchImpl("https://api.tavily.com/search", {
+    const r = await fetch(`https://api.hunter.io/v2/domain-search?${params.toString()}`);
+    if (!r.ok) return [];
+    const data = await r.json();
+    return (data.data?.emails || [])
+      .filter(e => e.position && TARGET_ROLE_RE.test(e.position) && !EXCLUDE_ROLE_RE.test(e.position))
+      .sort((a, b) => (b.confidence || 0) - (a.confidence || 0))
+      .map(e => ({ name: [e.first_name, e.last_name].filter(Boolean).join(" "), role: e.position || "", email: e.value, linkedin: e.linkedin || "" }));
+  } catch { return []; }
+}
+
+// Recherche directe sur LinkedIn via Tavily -- exactement ce qu'on ferait à
+// la main ("Hippopotamus directeur marketing" sur LinkedIn/Google). Le titre
+// d'une page LinkedIn a le format "Prénom Nom - Poste - Entreprise | LinkedIn"
+// ou "Prénom Nom | LinkedIn" : on extrait le nom (avant le premier " - " ou
+// " | "), jamais inventé si le format ne matche pas un nom plausible.
+function extractNameFromLinkedinTitle(title) {
+  if (!title) return "";
+  const head = title.split(/\s[-|–]\s/)[0].replace(/\s*\|\s*LinkedIn.*$/i, "").trim();
+  const words = head.split(/\s+/);
+  if (words.length < 2 || words.length > 4) return "";
+  if (!words.every(w => /^[A-ZÀ-Ü][a-zà-ÿ'.-]+$/.test(w))) return "";
+  return head;
+}
+
+async function linkedinSearchViaTavily(company) {
+  if (!process.env.TAVILY_API_KEY) return [];
+  try {
+    const r = await fetch("https://api.tavily.com/search", {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${process.env.TAVILY_API_KEY}` },
-      body: JSON.stringify({ query: `${name} ${company} LinkedIn`, max_results: 5, include_domains: ["linkedin.com"] })
+      body: JSON.stringify({ query: `site:linkedin.com/in "${company}" ${ROLE_QUERY_TERMS}`, max_results: 5, include_domains: ["linkedin.com"] })
     });
+    if (!r.ok) return [];
+    const data = await r.json();
+    const out = [];
+    for (const hit of data.results || []) {
+      if (!/linkedin\.com\/in\//.test(hit.url)) continue;
+      const name = extractNameFromLinkedinTitle(hit.title);
+      if (!name) continue; // titre pas au format attendu -- on n'invente pas un nom
+      const roleMatch = (hit.title.match(/-\s*([^-|]+?)\s*-\s*[^-|]+\|/) || [])[1];
+      out.push({ name, role: roleMatch || "", email: "", linkedin: hit.url });
+    }
+    return out;
+  } catch { return []; }
+}
+
+async function hunterEmailFinder(fullName, company) {
+  if (!process.env.HUNTER_API_KEY || !fullName) return "";
+  try {
+    const params = new URLSearchParams({ full_name: fullName, company, api_key: process.env.HUNTER_API_KEY });
+    const r = await fetch(`https://api.hunter.io/v2/email-finder?${params.toString()}`);
     if (!r.ok) return "";
     const data = await r.json();
-    // Le nom de famille doit apparaître dans l'URL ou le titre du résultat
-    // pour être retenu -- évite de renvoyer un homonyme ou un profil sans
-    // rapport plutôt qu'un lien deviné.
-    const lastName = name.trim().split(/\s+/).pop()?.toLowerCase() || "";
-    const hit = (data.results || []).find(x =>
-      /linkedin\.com\/in\//.test(x.url) && lastName && (x.url.toLowerCase().includes(lastName) || (x.title || "").toLowerCase().includes(lastName))
-    );
-    return hit ? hit.url : "";
-  } catch {
-    return ""; // une recherche LinkedIn ratée ne doit jamais faire échouer tout l'enrichissement
-  }
+    return data.data?.email || "";
+  } catch { return ""; }
 }
 
 exports.handler = async (event) => {
@@ -51,40 +94,44 @@ exports.handler = async (event) => {
     if (!company && !domain) {
       return { statusCode: 400, body: JSON.stringify({ error: "Entreprise ou domaine requis" }) };
     }
-    if (!process.env.HUNTER_API_KEY) {
-      return { statusCode: 501, body: JSON.stringify({ error: "HUNTER_API_KEY non configurée sur Netlify" }) };
+    if (!process.env.HUNTER_API_KEY && !process.env.TAVILY_API_KEY) {
+      return { statusCode: 501, body: JSON.stringify({ error: "Ni HUNTER_API_KEY ni TAVILY_API_KEY configurées sur Netlify" }) };
     }
-    // limit=10 : plafond du plan gratuit Hunter (25 recherches/mois, 10
-    // emails max par recherche de domaine). Une valeur plus haute déclenche
-    // une erreur explicite côté Hunter plutôt qu'une troncature silencieuse
-    // -- corrigé après l'avoir vu se produire en conditions réelles.
-    const params = new URLSearchParams({ api_key: process.env.HUNTER_API_KEY, limit: "10" });
-    if (domain) params.set("domain", domain);
-    else params.set("company", company);
 
-    const r = await fetch(`https://api.hunter.io/v2/domain-search?${params.toString()}`);
-    const data = await r.json();
-    if (!r.ok) {
-      return { statusCode: r.status, body: JSON.stringify({ error: data.errors?.[0]?.details || "Erreur API Hunter" }) };
+    let candidates = await hunterDomainSearch(company, domain);
+    let source = "hunter";
+    if (!candidates.length) {
+      const hits = await linkedinSearchViaTavily(company || domain);
+      // Filtre de pertinence : le titre du résultat LinkedIn doit contenir
+      // un terme de poste marketing/digital/media pour être retenu comme
+      // candidat -- sinon on ne sait pas si cette personne a un rapport
+      // avec le poste recherché, même si son nom est bien formé.
+      candidates = hits.filter(h => h.role && TARGET_ROLE_RE.test(h.role));
+      source = "linkedin_search";
     }
-    const emails = data.data?.emails || [];
-    const candidates = emails
-      .filter(e => e.position && TARGET_ROLE_RE.test(e.position) && !EXCLUDE_ROLE_RE.test(e.position))
-      .sort((a, b) => (b.confidence || 0) - (a.confidence || 0));
 
     if (!candidates.length) {
-      return { statusCode: 200, body: JSON.stringify({ found: false, reason: "Aucun contact marketing/digital/media trouvé sur ce domaine via Hunter" }) };
+      return { statusCode: 200, body: JSON.stringify({ found: false, reason: "Aucun contact marketing/digital/media trouvé, ni via Hunter ni via recherche LinkedIn directe" }) };
     }
 
-    async function toContact(e) {
-      const name = [e.first_name, e.last_name].filter(Boolean).join(" ") || "";
-      let linkedin = e.linkedin || "";
-      if (!linkedin) linkedin = await findLinkedinUrl(fetch, name, company || domain);
-      return { name, role: e.position || "", email: e.value, linkedin, confidence: e.confidence };
+    async function finalize(c) {
+      let linkedin = c.linkedin;
+      // Si Hunter a donné un nom sans LinkedIn, on tente Tavily pour le
+      // compléter -- même garde-fou anti-homonyme (nom de famille requis
+      // dans l'URL/titre) que pour l'email finder.
+      if (!linkedin && process.env.TAVILY_API_KEY && c.name) {
+        const hits = await linkedinSearchViaTavily(`${c.name} ${company || domain}`).catch(() => []);
+        const lastName = c.name.trim().split(/\s+/).pop()?.toLowerCase() || "";
+        const match = hits.find(h => h.linkedin.toLowerCase().includes(lastName));
+        if (match) linkedin = match.linkedin;
+      }
+      let email = c.email;
+      if (!email) email = await hunterEmailFinder(c.name, company || domain);
+      return { name: c.name, role: c.role, email, linkedin, source };
     }
 
-    const contact1 = await toContact(candidates[0]);
-    const contact2 = candidates[1] ? await toContact(candidates[1]) : null;
+    const contact1 = await finalize(candidates[0]);
+    const contact2 = candidates[1] ? await finalize(candidates[1]) : null;
 
     return { statusCode: 200, body: JSON.stringify({ found: true, contact1, contact2 }) };
   } catch (e) {
