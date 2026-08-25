@@ -19,6 +19,7 @@
     <button class="nav" data-view="outreach">Outreach</button>
     <button class="nav" data-view="radar">Radar Marché</button>
     <button class="nav" data-view="career">Opportunités Carrière</button>
+    <button class="nav" data-view="analytics">Analytics</button>
     <button class="nav" data-view="settings">Paramètres</button>
   </nav>
   <div class="side-bottom">
@@ -73,6 +74,13 @@
   <div id="careerList"></div>
  </div>
 </section>
+<section id="analytics" class="view">
+ <div class="metrics" id="analyticsMetrics"></div>
+ <div class="two-col" style="margin-top:16px">
+  <article class="panel"><div class="panel-head"><h3>Répartition par statut</h3></div><div id="analyticsByStatus"></div></article>
+  <article class="panel"><div class="panel-head"><h3>Répartition par catégorie</h3></div><div id="analyticsByCategory"></div></article>
+ </div>
+</section>
 <section id="settings" class="view">
  <div class="two-col">
   <article class="panel">
@@ -101,5 +109,5 @@
 <div id="modal" class="modal"><div class="backdrop" data-close-modal></div><form id="addForm" class="modal-card"><button class="close" type="button" data-close-modal>×</button><p class="eyebrow">NOUVEAU PROSPECT</p><h2>Ajouter une entreprise</h2><label>Entreprise<input name="company" required></label><label>Secteur<input name="sector"></label><label>Site web<input name="website" placeholder="https://..."></label><label>Décideur cible<input name="targetRole" value="CEO / CRO"></label><label>Priorité<select name="priority"><option>A</option><option>B</option><option>C</option></select></label><button class="btn primary" type="submit">Ajouter</button></form></div>
 <div id="emailModal" class="modal"><div class="backdrop" data-close-email-modal></div><form id="emailForm" class="modal-card"><button class="close" type="button" data-close-email-modal>×</button><p class="eyebrow">ENVOYER UN EMAIL</p><h2 id="emailModalTitle">Email</h2><label>Destinataire<input id="emTo" type="email" required></label><label>Objet<input id="emSubject" required></label><label>Message<textarea id="emBody" class="message" required></textarea></label><p class="muted" id="emStatus"></p><button class="btn primary" type="submit">Envoyer</button></form></div>
 <div id="toast" class="toast"></div>
-<script src="data.js?v=clean-1"></script><script src="app.js?v=clean-1"></script><script src="priorities.js?v=clean-1"></script><script src="outreach.js?v=clean-1"></script><script src="radar.js?v=clean-1"></script><script src="career.js?v=clean-1"></script><script src="ai.js?v=clean-1"></script><script src="settings.js?v=clean-1"></script><script src="dashboard-extra.js?v=clean-1"></script>
+<script src="data.js?v=clean-1"></script><script src="app.js?v=clean-1"></script><script src="priorities.js?v=clean-1"></script><script src="outreach.js?v=clean-1"></script><script src="radar.js?v=clean-1"></script><script src="career.js?v=clean-1"></script><script src="ai.js?v=clean-1"></script><script src="settings.js?v=clean-1"></script><script src="dashboard-extra.js?v=clean-1"></script><script src="analytics.js?v=clean-1"></script>
 </body></html>
