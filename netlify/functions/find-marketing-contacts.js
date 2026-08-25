@@ -73,10 +73,24 @@ async function linkedinSearchViaTavily(query) {
       const name = extractNameFromLinkedinTitle(hit.title);
       if (!name) continue; // titre pas au format attendu -- on n'invente pas un nom
       const roleMatch = (hit.title.match(/-\s*([^-|]+?)\s*-\s*[^-|]+\|/) || [])[1];
-      out.push({ name, role: roleMatch || "", title: hit.title, linkedin: hit.url });
+      out.push({ name, role: roleMatch || "", title: hit.title, content: hit.content || "", linkedin: hit.url });
     }
     return out;
   } catch { return []; }
+}
+
+// Exclusion géographique : un même nom d'entreprise ("Intersport") peut
+// exister sans rapport dans plusieurs pays. Rejette tout résultat dont le
+// titre/contenu mentionne clairement un pays/état étranger -- c'est ce qui
+// a laissé passer "Craig Anderson, Marketing Director at Intersport,
+// Cortland, Illinois" (une société américaine homonyme, rien à voir avec
+// l'enseigne française). Approche par liste de blocage : imparfaite (ne
+// couvre pas tous les pays possibles) mais élimine les cas les plus
+// fréquents (résultats anglophones US/UK dominants sur LinkedIn).
+const FOREIGN_LOCATION_RE = /\b(united states|usa|u\.s\.a?\.?|illinois|california|texas|new york|florida|united kingdom|england|scotland|london|germany|deutschland|canada|ontario|australia|india|nederland|netherlands)\b/i;
+
+function isLikelyFrance(hit) {
+  return !FOREIGN_LOCATION_RE.test(`${hit.title} ${hit.content}`);
 }
 
 async function hunterEmailFinder(fullName, company) {
@@ -106,16 +120,14 @@ exports.handler = async (event) => {
     let candidates = await hunterDomainSearch(company, domain);
     let source = "hunter";
     if (!candidates.length) {
-      // Requête en langage naturel (pas de syntaxe Google) -- Tavily
-      // comprend le sens, pas les opérateurs booléens.
-      const hits = await linkedinSearchViaTavily(`${company || domain} directeur marketing responsable marketing head of digital directeur communication`);
-      // Filtre de pertinence : le TITRE ENTIER du résultat LinkedIn doit
-      // contenir un terme marketing/digital/media pour être retenu --
-      // testé sur le titre complet plutôt que sur un segment extrait,
-      // car l'extraction du poste est fragile selon le format exact du
-      // titre (variable d'un profil à l'autre).
+      // "France" explicitement dans la requête : sans ça, une entreprise au
+      // nom homonyme à l'étranger (ex. un "Intersport" américain sans
+      // rapport) peut ressortir en premier -- vu en conditions réelles.
+      const hits = await linkedinSearchViaTavily(`${company || domain} France directeur marketing responsable marketing head of digital directeur communication`);
+      // Deux filtres cumulatifs : pertinence du poste (titre entier) ET
+      // absence de signal géographique clairement étranger.
       candidates = hits
-        .filter(h => TARGET_ROLE_RE.test(h.title))
+        .filter(h => TARGET_ROLE_RE.test(h.title) && isLikelyFrance(h))
         .map(h => ({ name: h.name, role: h.role, email: "", linkedin: h.linkedin }));
       source = "linkedin_search";
     }
