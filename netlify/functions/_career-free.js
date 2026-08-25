@@ -75,6 +75,9 @@ async function fetchLever(companyMeta, fetchImpl) {
  */
 async function runFreeCareerScan(deps) {
   const { store, fetchImpl, companies } = deps;
+  const { fetchFranceTravail } = require("./_career-francetravail.js");
+  const { fetchLinkedIn } = require("./_career-linkedin.js");
+
   const results = await Promise.allSettled(
     companies.map(c => (c.ats === "lever" ? fetchLever(c, fetchImpl) : fetchGreenhouse(c, fetchImpl)))
   );
@@ -90,6 +93,27 @@ async function runFreeCareerScan(deps) {
       sitesFailed.push({ company: c.company, reason: res.reason?.message || "erreur inconnue" });
     }
   });
+
+  // France Travail et LinkedIn sont des sources transversales (pas par
+  // entreprise) -- statut ajouté séparément, jamais bloquant pour le reste.
+  const [ftResult, liResult] = await Promise.allSettled([
+    fetchFranceTravail(fetchImpl),
+    fetchLinkedIn(fetchImpl)
+  ]);
+
+  if (ftResult.status === "fulfilled") {
+    if (ftResult.value.skipped) sitesFailed.push({ company: "France Travail", reason: "FRANCETRAVAIL_CLIENT_ID/SECRET non configurées" });
+    else { sitesOk.push("France Travail"); allJobs.push(...ftResult.value.jobs); }
+  } else {
+    sitesFailed.push({ company: "France Travail", reason: ftResult.reason?.message || "erreur inconnue" });
+  }
+
+  if (liResult.status === "fulfilled") {
+    if (liResult.value.blocked) sitesFailed.push({ company: "LinkedIn", reason: "Endpoint invité indisponible ou bloqué (limite anti-scraping) -- normal, non bloquant" });
+    else { sitesOk.push("LinkedIn"); allJobs.push(...liResult.value.jobs); }
+  } else {
+    sitesFailed.push({ company: "LinkedIn", reason: liResult.reason?.message || "erreur inconnue" });
+  }
 
   const existing = (await store.get("career-jobs-free")) || [];
   const existingByFp = new Map(existing.map(j => [fingerprint(j), j]));

@@ -183,6 +183,41 @@ manuellement.
 3 appels pour la carrière + le lot radar). Ajuster `RADAR_SCAN_BATCH_SIZE`
 à la baisse réduit encore le coût du côté radar.
 
+## Career Engine gratuit (zéro IA, zéro crédit Anthropic)
+
+Sprint "Oligart OS" : refonte de la recherche d'offres pour ne plus jamais
+dépendre de crédits Anthropic. Fonctionne en parallèle du scan carrière IA
+ci-dessus (qui reste disponible si des crédits existent), mais aucun des
+deux n'est requis pour l'autre.
+
+- **Sources** : Greenhouse et Lever (API JSON publiques officielles, par
+  entreprise — liste éditable dans `career-companies.json`), **France
+  Travail** (API officielle OAuth2, 300k+ offres, inscription gratuite sur
+  francetravail.io — `FRANCETRAVAIL_CLIENT_ID`/`FRANCETRAVAIL_CLIENT_SECRET`,
+  scan ignoré proprement si absentes), **LinkedIn** (endpoint invité public
+  documenté, lecture seule, sans login ni cookie — peut se faire bloquer par
+  LinkedIn après quelques requêtes, traité comme "indisponible" sans casser
+  le reste du scan). APEC et Welcome to the Jungle ne sont **pas**
+  implémentés en connecteur direct : ce sont des SPA React/Angular qui ne
+  renvoient aucune donnée exploitable en simple requête HTTP (contrairement
+  à Greenhouse/Lever/France Travail qui exposent une vraie API), et les
+  contourner proprement demanderait soit un service tiers payant, soit une
+  rétro-ingénierie fragile de leur API interne nécessitant vérification.
+- **Scoring 100% local** (`career-scoring.js`) : barème JS exact (titre,
+  secteur, responsabilités détectées par mots-clés, séniorité, localisation,
+  malus junior/stage/SDR), aucun appel réseau, aucune IA.
+- **Déduplication** par empreinte (entreprise + titre normalisé + lieu) :
+  une même offre présente sur plusieurs sources n'apparaît qu'une fois.
+- **Actualisation automatique deux fois par jour** (07h/17h UTC, Netlify
+  Scheduled Function) plus un bouton "Actualiser les offres" à la demande.
+  Stockage dans Netlify Blobs (`career-jobs-free`), pas de Supabase dans ce
+  projet — tout reste cohérent avec le principe "aucune base de données
+  externe" déjà en place pour le reste de l'app.
+- **Résilience** : chaque source est interrogée indépendamment
+  (`Promise.allSettled`) — l'échec d'une source (LinkedIn bloqué, France
+  Travail non configuré...) n'empêche jamais les autres de remonter des
+  résultats. Statut par source affiché dans l'interface.
+
 ## Données & confidentialité
 
 Toutes les données de prospection restent **sur l'appareil de l'utilisateur**
