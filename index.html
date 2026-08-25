@@ -54,7 +54,12 @@
 </section>
 <section id="career" class="view">
  <div class="panel">
-  <div class="panel-head"><h3>Postes en veille</h3><button id="careerAddToggle" class="btn secondary">+ Ajouter un poste</button></div>
+  <div class="panel-head"><h3>Offres détectées (gratuit, sans IA)</h3><button id="careerFreeRefresh" class="btn secondary">Actualiser les offres</button></div>
+  <p class="muted" id="careerFreeStatus" style="margin:0 0 12px"></p>
+  <div id="careerFreeJobs"></div>
+ </div>
+ <div class="panel" style="margin-top:16px">
+  <div class="panel-head"><h3>Postes en veille (suivi manuel)</h3><button id="careerAddToggle" class="btn secondary">+ Ajouter un poste</button></div>
   <form id="careerForm" class="detail-grid" style="display:none;margin-bottom:18px">
    <label>Rôle<select id="cRole"></select></label>
    <label>Entreprise<input id="cCompany" required></label>
