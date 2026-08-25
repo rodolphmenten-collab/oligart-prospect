@@ -77,6 +77,7 @@ async function runFreeCareerScan(deps) {
   const { store, fetchImpl, companies } = deps;
   const { fetchFranceTravail } = require("./_career-francetravail.js");
   const { fetchLinkedIn } = require("./_career-linkedin.js");
+  const { fetchWTTJ } = require("./_career-wttj.js");
 
   const results = await Promise.allSettled(
     companies.map(c => (c.ats === "lever" ? fetchLever(c, fetchImpl) : fetchGreenhouse(c, fetchImpl)))
@@ -94,11 +95,12 @@ async function runFreeCareerScan(deps) {
     }
   });
 
-  // France Travail et LinkedIn sont des sources transversales (pas par
+  // France Travail, LinkedIn et WTTJ sont des sources transversales (pas par
   // entreprise) -- statut ajouté séparément, jamais bloquant pour le reste.
-  const [ftResult, liResult] = await Promise.allSettled([
+  const [ftResult, liResult, wttjResult] = await Promise.allSettled([
     fetchFranceTravail(fetchImpl),
-    fetchLinkedIn(fetchImpl)
+    fetchLinkedIn(fetchImpl),
+    fetchWTTJ(fetchImpl)
   ]);
 
   if (ftResult.status === "fulfilled") {
@@ -113,6 +115,13 @@ async function runFreeCareerScan(deps) {
     else { sitesOk.push("LinkedIn"); allJobs.push(...liResult.value.jobs); }
   } else {
     sitesFailed.push({ company: "LinkedIn", reason: liResult.reason?.message || "erreur inconnue" });
+  }
+
+  if (wttjResult.status === "fulfilled") {
+    if (wttjResult.value.blocked) sitesFailed.push({ company: "Welcome to the Jungle", reason: "Indisponible (clé Algolia probablement changée depuis) -- non bloquant" });
+    else { sitesOk.push("Welcome to the Jungle"); allJobs.push(...wttjResult.value.jobs); }
+  } else {
+    sitesFailed.push({ company: "Welcome to the Jungle", reason: wttjResult.reason?.message || "erreur inconnue" });
   }
 
   const existing = (await store.get("career-jobs-free")) || [];
