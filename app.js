@@ -128,12 +128,47 @@ function openProspect(id){selected=prospects.find(p=>p.id===id);if(!selected)ret
  $('#findHosEmail').onclick=()=>findEmail('dHos','dHosEmail','Head of Sales');
  $('#copyDm').onclick=async()=>{await navigator.clipboard.writeText($('#dMessage').value);toast('Message copié')};
  $('#openMail').onclick=()=>{if(!$('#dEmail').value)return toast('Ajoute un email');location.href=`mailto:${encodeURIComponent($('#dEmail').value)}?subject=${encodeURIComponent('Échange — '+p.company+' x Oligart')}&body=${encodeURIComponent($('#dMessage').value)}`};
- $('#sendMail').onclick=async()=>{if(!$('#dEmail').value)return toast('Ajoute un email');try{const r=await fetch('/.netlify/functions/send-email',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({to:$('#dEmail').value,subject:'Échange — '+p.company+' x Oligart',text:$('#dMessage').value})});const d=await r.json();if(!r.ok)throw new Error(d.error||'Envoi impossible');p.status='Contacté';p.lastContact=today();p.nextFollowUp=today(4);addTimelineEntry(p,{channel:'email',type:'auto',note:'Email envoyé via Gandi (SMTP)'});toast('Email envoyé')}catch(e){toast(e.message)}}
+ // Envoi email : ouvre un modal éditable (destinataire/objet/message) plutôt
+ // que d'envoyer directement -- l'utilisateur garde la main sur le contenu
+ // final avant tout envoi réel via SMTP.
+ $('#sendMail').onclick=()=>{
+  if(!$('#dEmail').value)return toast('Ajoute un email');
+  $('#emailModalTitle').textContent=`Email — ${p.company}`;
+  $('#emTo').value=$('#dEmail').value;
+  $('#emSubject').value=`Échange — ${p.company} x Oligart`;
+  $('#emBody').value=$('#dMessage').value;
+  $('#emStatus').textContent='';
+  $('#emailModal').classList.add('open');
+ };
  // Signale aux modules additionnels (outreach, radar, ai) que la fiche est ouverte,
  // pour qu'ils puissent injecter leur contenu dans #drawerExtra sans toucher au coeur.
  try{document.dispatchEvent(new CustomEvent('oligart:prospect-opened',{detail:{id:p.id}}))}catch{/* no-op si CustomEvent indisponible */}
 }
 $$('[data-close]').forEach(x=>x.onclick=()=>$('#drawer').classList.remove('open'));$$('[data-close-modal]').forEach(x=>x.onclick=()=>$('#modal').classList.remove('open'));
+$$('[data-close-email-modal]').forEach(x=>x.onclick=()=>$('#emailModal').classList.remove('open'));
+// Historique email complet (section "email_history" du cahier des charges) :
+// tout est stocké dans la timeline du prospect en localStorage -- pas de
+// Supabase dans ce projet, donc pas de table séparée, mais chaque entrée
+// porte tous les champs demandés (destinataire, objet, contenu, statut, date).
+$('#emailForm').onsubmit=async(e)=>{
+ e.preventDefault();
+ const p=selected;if(!p)return;
+ const to=$('#emTo').value,subject=$('#emSubject').value,text=$('#emBody').value;
+ $('#emStatus').textContent='Envoi en cours...';
+ try{
+  const r=await fetch('/.netlify/functions/send-email',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({to,subject,text})});
+  const d=await r.json();
+  if(!r.ok)throw new Error(d.error||'Envoi impossible');
+  p.status='Contacté';p.lastContact=today();p.nextFollowUp=today(4);
+  addTimelineEntry(p,{channel:'email',type:'auto',status:'sent',to,subject,body:text,note:`Email envoyé à ${to} : "${subject}"`});
+  $('#emailModal').classList.remove('open');
+  toast('Email envoyé');
+  if($('#drawer').classList.contains('open'))openProspect(p.id);
+ }catch(err){
+  addTimelineEntry(p,{channel:'email',type:'auto',status:'failed',to,subject,body:text,note:`Échec d'envoi à ${to} : ${err.message}`});
+  $('#emStatus').textContent=`Échec de l'envoi : ${err.message}`;
+ }
+};
 $$('.nav').forEach(n=>n.onclick=()=>{$$('.nav').forEach(x=>x.classList.remove('active'));n.classList.add('active');$$('.view').forEach(x=>x.classList.remove('active'));$('#'+n.dataset.view).classList.add('active');$('#title').textContent=n.textContent});
 $$('[data-go]').forEach(b=>b.onclick=()=>document.querySelector(`.nav[data-view="${b.dataset.go}"]`).click());
 $('#statusFilter').innerHTML='<option value="">Tous statuts</option>'+STATUSES.map(s=>`<option>${s}</option>`).join('');
