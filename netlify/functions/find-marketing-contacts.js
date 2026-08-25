@@ -73,10 +73,24 @@ async function linkedinSearchViaTavily(query) {
       const name = extractNameFromLinkedinTitle(hit.title);
       if (!name) continue; // titre pas au format attendu -- on n'invente pas un nom
       const roleMatch = (hit.title.match(/-\s*([^-|]+?)\s*-\s*[^-|]+\|/) || [])[1];
-      out.push({ name, role: roleMatch || "", title: hit.title, linkedin: hit.url });
+      out.push({ name, role: roleMatch || "", title: hit.title, content: hit.content || "", linkedin: hit.url });
     }
     return out;
   } catch { return []; }
+}
+
+// Exclusion géographique : un même nom d'entreprise ("Intersport") peut
+// exister sans rapport dans plusieurs pays. Rejette tout résultat dont le
+// titre/contenu mentionne clairement un pays/état étranger -- c'est ce qui
+// a laissé passer "Craig Anderson, Marketing Director at Intersport,
+// Cortland, Illinois" (une société américaine homonyme, rien à voir avec
+// l'enseigne française). Approche par liste de blocage : imparfaite (ne
+// couvre pas tous les pays possibles) mais élimine les cas les plus
+// fréquents (résultats anglophones US/UK dominants sur LinkedIn).
+const FOREIGN_LOCATION_RE = /\b(united states|usa|u\.s\.a?\.?|illinois|california|texas|new york|florida|united kingdom|england|scotland|london|germany|deutschland|canada|ontario|australia|india|nederland|netherlands)\b/i;
+
+function isLikelyFrance(hit) {
+  return !FOREIGN_LOCATION_RE.test(`${hit.title} ${hit.content}`);
 }
 
 async function hunterEmailFinder(fullName, company) {
@@ -88,6 +102,41 @@ async function hunterEmailFinder(fullName, company) {
     const data = await r.json();
     return data.data?.email || "";
   } catch { return ""; }
+}
+
+// Désambiguïsation intelligente (optionnelle) : les filtres par mots-clés/
+// listes de blocage (TARGET_ROLE_RE, isLikelyFrance) sont rigides et ratent
+// des cas réels (Hippopotamus introuvable, homonyme américain d'Intersport
+// mal filtré). Quand ANTHROPIC_API_KEY est configurée, les résultats bruts
+// de la recherche LinkedIn sont soumis à un LLM qui raisonne vraiment :
+// est-ce la bonne entreprise (pas un homonyme), la bonne personne, le bon
+// poste -- au lieu d'un pattern-matching mécanique. Sans clé, ou si l'appel
+// échoue, repli automatique sur le filtrage heuristique existant (jamais
+// bloquant).
+const AI_MODEL = process.env.ANTHROPIC_MODEL || "claude-sonnet-4-6";
+
+async function aiPickCandidates(hits, company) {
+  if (!process.env.ANTHROPIC_API_KEY || !hits.length) return null;
+  try {
+    const hitsText = hits.map((h, i) => `[${i}] Titre: "${h.title}"\nURL: ${h.linkedin}\nExtrait: "${(h.content || "").slice(0, 300)}"`).join("\n\n");
+    const prompt = `Voici des résultats de recherche LinkedIn pour trouver le décideur qui gère le budget media/marketing/digital de l'entreprise française "${company}".\n\n${hitsText}\n\nAnalyse chaque résultat et identifie UNIQUEMENT les personnes qui :\n1. Travaillent réellement pour "${company}" en FRANCE (pas une entreprise homonyme dans un autre pays -- vérifie bien qu'il s'agit de la bonne entité)\n2. Ont un poste lié au marketing, à la communication, au digital ou aux médias (pas CEO, pas commercial/ventes, pas un métier sans rapport comme cuisinier ou RH)\n\nRéponds UNIQUEMENT en JSON valide, sans texte autour, format exact :\n{"candidates": [{"index": 0, "name": "Prénom Nom", "role": "intitulé du poste", "reasoning": "pourquoi cette personne correspond, en une phrase"}]}\n\nSi aucun résultat ne correspond clairement, réponds {"candidates": []}. Ne devine jamais -- si un doute sérieux existe sur l'entreprise ou le poste, exclus ce résultat.`;
+
+    const r = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-api-key": process.env.ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01" },
+      body: JSON.stringify({ model: AI_MODEL, max_tokens: 600, messages: [{ role: "user", content: prompt }] })
+    });
+    if (!r.ok) return null;
+    const data = await r.json();
+    const text = data.content?.[0]?.text || "";
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) return null;
+    const parsed = JSON.parse(jsonMatch[0]);
+    if (!Array.isArray(parsed.candidates)) return null;
+    return parsed.candidates
+      .filter(c => typeof c.index === "number" && hits[c.index])
+      .map(c => ({ name: c.name || hits[c.index].name, role: c.role || hits[c.index].role, email: "", linkedin: hits[c.index].linkedin, aiReasoning: c.reasoning || "" }));
+  } catch { return null; } // une IA indisponible ne doit jamais bloquer la recherche
 }
 
 exports.handler = async (event) => {
@@ -106,18 +155,24 @@ exports.handler = async (event) => {
     let candidates = await hunterDomainSearch(company, domain);
     let source = "hunter";
     if (!candidates.length) {
-      // Requête en langage naturel (pas de syntaxe Google) -- Tavily
-      // comprend le sens, pas les opérateurs booléens.
-      const hits = await linkedinSearchViaTavily(`${company || domain} directeur marketing responsable marketing head of digital directeur communication`);
-      // Filtre de pertinence : le TITRE ENTIER du résultat LinkedIn doit
-      // contenir un terme marketing/digital/media pour être retenu --
-      // testé sur le titre complet plutôt que sur un segment extrait,
-      // car l'extraction du poste est fragile selon le format exact du
-      // titre (variable d'un profil à l'autre).
-      candidates = hits
-        .filter(h => TARGET_ROLE_RE.test(h.title))
-        .map(h => ({ name: h.name, role: h.role, email: "", linkedin: h.linkedin }));
-      source = "linkedin_search";
+      // "France" explicitement dans la requête : sans ça, une entreprise au
+      // nom homonyme à l'étranger (ex. un "Intersport" américain sans
+      // rapport) peut ressortir en premier -- vu en conditions réelles.
+      const hits = await linkedinSearchViaTavily(`${company || domain} France directeur marketing responsable marketing head of digital directeur communication`);
+
+      // Priorité à la désambiguïsation IA (raisonne vraiment sur chaque
+      // résultat) ; repli sur le filtrage par mots-clés/liste de blocage
+      // si pas de clé Anthropic ou si l'appel échoue.
+      const aiPicked = await aiPickCandidates(hits, company || domain);
+      if (aiPicked && aiPicked.length) {
+        candidates = aiPicked;
+        source = "linkedin_search_ai";
+      } else {
+        candidates = hits
+          .filter(h => TARGET_ROLE_RE.test(h.title) && isLikelyFrance(h))
+          .map(h => ({ name: h.name, role: h.role, email: "", linkedin: h.linkedin }));
+        source = "linkedin_search";
+      }
     }
 
     if (!candidates.length) {
