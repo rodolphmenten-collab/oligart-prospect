@@ -13,7 +13,7 @@ let prospects=[]; let selected=null;
 // base à chaque chargement -- exactement ce qui manquait jusqu'ici : avant ce
 // correctif, il fallait cliquer "Restaurer" pour voir les nouveaux prospects,
 // ce qui effaçait au passage tout le travail de prospection déjà fait.
-const EDITABLE_FIELDS=['status','priority','contactName','contactEmail','contactLinkedin','ceoName','ceoLinkedin','ceoEmail','headOfSalesName','headOfSalesLinkedin','headOfSalesEmail','phone','why','notes','targetRole','lastContact','nextFollowUp','timeline','signals','sequenceStep'];
+const EDITABLE_FIELDS=['status','priority','contactName','contactEmail','contactLinkedin','contact2Name','contact2Role','contact2Email','contact2Linkedin','ceoName','ceoLinkedin','ceoEmail','headOfSalesName','headOfSalesLinkedin','headOfSalesEmail','phone','why','notes','targetRole','lastContact','nextFollowUp','timeline','signals','sequenceStep'];
 function smartMerge(seed,stored){
  const storedById=new Map(stored.map(p=>[p.id,p]));
  const merged=seed.map(seedP=>{
@@ -39,6 +39,7 @@ try{
 // sans jamais perdre les données existantes ni bloquer le rendu.
 function migrateProspect(p){
  p.ceoName??='';p.ceoLinkedin??='';p.ceoEmail??='';p.headOfSalesName??='';p.headOfSalesLinkedin??='';p.headOfSalesEmail??='';p.phone??='';
+ p.contact2Name??='';p.contact2Role??='';p.contact2Email??='';p.contact2Linkedin??='';
  p.category??='Franchises PME';
  if(p.hasAgency===undefined)p.hasAgency=null;
  if(p.likelyNoAgency===undefined)p.likelyNoAgency=false;
@@ -93,7 +94,16 @@ function renderAll(){
 }
 function bindRows(){$$('[data-id]').forEach(el=>{if(!el.classList.contains('card'))el.onclick=()=>openProspect(el.dataset.id)})}
 function messageFor(p){const name=p.contactName?` ${p.contactName}`:'';return `Bonjour${name},\n\nJe me permets de vous contacter au sujet de la stratégie média digitale de ${p.company}.\n\nOligart accompagne les annonceurs à la fois en conseil (structuration de la stratégie média et go-to-market, priorisation des leviers) et en exécution opérationnelle sur l’achat media 360°, branding et performance sur un seul dispositif : display, vidéo, audio, CTV et DOOH pour la notoriété ; native et retargeting pour la conversion.\n\nCe qui fait la différence à l’exécution : un inventaire 100% premium et brand-safe (vérifié par des tiers indépendants type DoubleVerify/IAS), des KPIs garantis sur chaque format (CPC, CPM, reach, taux de complétion vidéo — pas de best-effort), et un ciblage data précis (400+ segments, sans cookies tiers, conforme RGPD).\n\nLe tout géré en direct, avec des honoraires transparents et un format plus flexible qu’une agence traditionnelle.\n\nJe serais ravi d’échanger 20 minutes pour voir comment structurer et optimiser votre stratégie média actuelle.\n\nMon site : https://oligart-agency.com\n\nBien à vous,\nRodolph Menten`}
-function openProspect(id){selected=prospects.find(p=>p.id===id);if(!selected)return;const p=selected;$('#drawerBody').innerHTML=`<p class="eyebrow">${esc(p.priority)} · SCORE ${p.score}</p><h1>${esc(p.company)}</h1><p class="muted">${esc(p.sector)} · ${esc(p.country)} · ${esc(p.size)}</p><div class="actions"><a class="btn secondary" target="_blank" href="${esc(p.website)}">Site / recherche</a><a class="btn secondary" target="_blank" href="${esc(p.companyLinkedin)}">LinkedIn entreprise</a><a class="btn secondary" target="_blank" href="${esc(p.contactLinkedin||p.leaderSearch)}">Décideur LinkedIn</a></div><div class="detail-grid"><label>Statut<select id="dStatus">${STATUSES.map(s=>`<option ${s===p.status?'selected':''}>${s}</option>`).join('')}</select></label><label>Priorité<select id="dPriority">${['A','B','C'].map(s=>`<option ${s===p.priority?'selected':''}>${s}</option>`).join('')}</select></label><label>Nom du contact<input id="dName" value="${esc(p.contactName)}"></label><label>Fonction cible<input id="dRole" value="${esc(p.targetRole)}"></label><label>Email<input id="dEmail" type="email" value="${esc(p.contactEmail)}"></label><label>LinkedIn du contact<input id="dLinkedin" value="${esc(p.contactLinkedin)}"></label><label>Téléphone<input id="dPhone" value="${esc(p.phone)}"></label><label>Prochaine relance<input id="dNext" type="date" value="${esc(p.nextFollowUp)}"></label><label class="wide">Relance rapide<div class="actions" style="margin-top:4px"><button type="button" class="btn secondary" data-followup="3">+3 jours</button><button type="button" class="btn secondary" data-followup="5">+5 jours</button><button type="button" class="btn secondary" data-followup="7">+7 jours</button></div></label><label>CEO<input id="dCeo" value="${esc(p.ceoName)}" placeholder="Nom du CEO"></label><label>LinkedIn CEO<input id="dCeoLi" value="${esc(p.ceoLinkedin)}" placeholder="https://linkedin.com/in/..."></label><label>Email CEO<input id="dCeoEmail" type="email" value="${esc(p.ceoEmail||'')}" placeholder="trouvé automatiquement ou saisi à la main"></label><label>Head of Sales<input id="dHos" value="${esc(p.headOfSalesName)}" placeholder="Nom Head of Sales"></label><label>Email Head of Sales<input id="dHosEmail" type="email" value="${esc(p.headOfSalesEmail)}"></label><label class="wide">LinkedIn Head of Sales<input id="dHosLi" value="${esc(p.headOfSalesLinkedin)}" placeholder="https://linkedin.com/in/..."></label><label class="wide">Domaine du site (optionnel, améliore la recherche d'email)<input id="dDomain" placeholder="ex: carglass.fr"></label><label class="wide">Pourquoi Oligart<textarea id="dWhy">${esc(p.why)}</textarea></label><label class="wide">Notes<textarea id="dNotes">${esc(p.notes)}</textarea></label><label class="wide">Message<textarea class="message" id="dMessage">${esc(messageFor(p))}</textarea></label></div><div class="actions"><button id="saveDetail" class="btn primary">Enregistrer</button><button id="copyDm" class="btn secondary">Copier le message</button><button id="openMail" class="btn secondary">Ouvrir dans Airmail</button><button id="sendMail" class="btn secondary">Envoyer via Gandi</button></div><div class="actions"><button id="findCeoEmail" class="btn secondary">🔍 Trouver l'email du CEO</button><button id="findHosEmail" class="btn secondary">🔍 Trouver l'email du Head of Sales</button><button id="enrichLead" class="btn secondary">🏢 Enrichir automatiquement</button></div><p class="muted" id="findEmailStatus"></p><div id="enrichResult"></div><div id="drawerExtra"></div>`;
+function openProspect(id){selected=prospects.find(p=>p.id===id);if(!selected)return;const p=selected;$('#drawerBody').innerHTML=`<p class="eyebrow">${esc(p.priority)} · SCORE ${p.score}</p><h1>${esc(p.company)}</h1><p class="muted">${esc(p.sector)} · ${esc(p.country)} · ${esc(p.size)}</p><div class="actions"><a class="btn secondary" target="_blank" href="${esc(p.website)}">Site / recherche</a><a class="btn secondary" target="_blank" href="${esc(p.companyLinkedin)}">LinkedIn entreprise</a></div><div class="detail-grid"><label>Statut<select id="dStatus">${STATUSES.map(s=>`<option ${s===p.status?'selected':''}>${s}</option>`).join('')}</select></label><label>Priorité<select id="dPriority">${['A','B','C'].map(s=>`<option ${s===p.priority?'selected':''}>${s}</option>`).join('')}</select></label><label>Prochaine relance<input id="dNext" type="date" value="${esc(p.nextFollowUp)}"></label><label class="wide">Relance rapide<div class="actions" style="margin-top:4px"><button type="button" class="btn secondary" data-followup="3">+3 jours</button><button type="button" class="btn secondary" data-followup="5">+5 jours</button><button type="button" class="btn secondary" data-followup="7">+7 jours</button></div></label><label class="wide">Domaine du site (optionnel, améliore la recherche du contact)<input id="dDomain" placeholder="ex: carglass.fr"></label></div>
+ <div class="actions"><button id="findMarketingContact" class="btn secondary">🎯 Trouver le contact marketing / digital</button><button id="enrichLead" class="btn secondary">🏢 Enrichir l'entreprise (effectif, secteur...)</button></div>
+ <p class="muted" id="findContactStatus"></p><div id="enrichResult"></div>
+ <div class="detail-grid" style="margin-top:14px"><label class="wide"><b>Contact 1 (décideur média/marketing)</b></label><label>Nom<input id="dName" value="${esc(p.contactName)}" placeholder="Prénom Nom"></label><label>Fonction<input id="dRole" value="${esc(p.targetRole)}" placeholder="Directeur Marketing, Head of Digital..."></label><label>Email<input id="dEmail" type="email" value="${esc(p.contactEmail)}"></label><label>LinkedIn<input id="dLinkedin" value="${esc(p.contactLinkedin)}" placeholder="https://linkedin.com/in/..."></label></div>
+ <div class="actions"><button data-contact-action="linkedin-add" data-slot="1" class="btn secondary">🔗 Ajouter sur LinkedIn</button><button data-contact-action="email" data-slot="1" class="btn secondary">✉️ Envoyer un email</button><button data-contact-action="linkedin-dm" data-slot="1" class="btn secondary">💬 DM LinkedIn</button></div>
+ <div class="detail-grid" style="margin-top:14px"><label class="wide"><b>Contact 2 (optionnel, si deux décideurs identifiés)</b></label><label>Nom<input id="dName2" value="${esc(p.contact2Name||'')}" placeholder="Prénom Nom"></label><label>Fonction<input id="dRole2" value="${esc(p.contact2Role||'')}" placeholder="Directeur Media, Responsable Digital..."></label><label>Email<input id="dEmail2" type="email" value="${esc(p.contact2Email||'')}"></label><label>LinkedIn<input id="dLinkedin2" value="${esc(p.contact2Linkedin||'')}" placeholder="https://linkedin.com/in/..."></label></div>
+ <div class="actions"><button data-contact-action="linkedin-add" data-slot="2" class="btn secondary">🔗 Ajouter sur LinkedIn</button><button data-contact-action="email" data-slot="2" class="btn secondary">✉️ Envoyer un email</button><button data-contact-action="linkedin-dm" data-slot="2" class="btn secondary">💬 DM LinkedIn</button></div>
+ <div class="detail-grid" style="margin-top:14px"><label class="wide">Pourquoi Oligart<textarea id="dWhy">${esc(p.why)}</textarea></label><label class="wide">Notes<textarea id="dNotes">${esc(p.notes)}</textarea></label><label class="wide">Message (utilisé pour l'envoi email des deux contacts)<textarea class="message" id="dMessage">${esc(messageFor(p))}</textarea></label></div>
+ <div class="actions"><button id="saveDetail" class="btn primary">Enregistrer</button><button id="copyDm" class="btn secondary">Copier le message</button></div>
+ <div id="drawerExtra"></div>`;
  $('#drawer').classList.add('open');
  // Relance rapide : +3/+5/+7 jours à partir d'aujourd'hui, directement dans
  // le champ date -- il faut ensuite cliquer Enregistrer comme pour tout
@@ -103,32 +113,31 @@ function openProspect(id){selected=prospects.find(p=>p.id===id);if(!selected)ret
   const d=new Date();d.setDate(d.getDate()+days);
   $('#dNext').value=d.toISOString().slice(0,10);
  });
- $('#saveDetail').onclick=()=>{Object.assign(p,{status:$('#dStatus').value,priority:$('#dPriority').value,contactName:$('#dName').value,targetRole:$('#dRole').value,contactEmail:$('#dEmail').value,contactLinkedin:$('#dLinkedin').value,phone:$('#dPhone').value,nextFollowUp:$('#dNext').value,ceoName:$('#dCeo').value,ceoLinkedin:$('#dCeoLi').value,ceoEmail:$('#dCeoEmail').value,headOfSalesName:$('#dHos').value,headOfSalesEmail:$('#dHosEmail').value,headOfSalesLinkedin:$('#dHosLi').value,why:$('#dWhy').value,notes:$('#dNotes').value});save();toast('Fiche enregistrée')};
- // Recherche automatique d'email via Hunter.io (nom + entreprise, domaine
- // optionnel s'il est renseigné). Ne fait jamais planter le reste de la
- // fiche si l'API n'est pas configurée ou ne trouve rien -- message clair.
- async function findEmail(nameFieldId,emailFieldId,label){
-  const status=$('#findEmailStatus');
-  const fullName=$('#'+nameFieldId).value.trim();
-  if(!fullName){status.textContent=`Renseigne d'abord le nom (${label}) avant de chercher son email.`;return}
-  status.textContent=`Recherche en cours pour ${fullName}...`;
+ $('#saveDetail').onclick=()=>{Object.assign(p,{status:$('#dStatus').value,priority:$('#dPriority').value,contactName:$('#dName').value,targetRole:$('#dRole').value,contactEmail:$('#dEmail').value,contactLinkedin:$('#dLinkedin').value,contact2Name:$('#dName2').value,contact2Role:$('#dRole2').value,contact2Email:$('#dEmail2').value,contact2Linkedin:$('#dLinkedin2').value,nextFollowUp:$('#dNext').value,why:$('#dWhy').value,notes:$('#dNotes').value});save();toast('Fiche enregistrée')};
+ // Recherche du décideur média/marketing/digital via Hunter.io Domain Search
+ // (liste les personnes connues sur le domaine avec leur poste, filtré sur
+ // marketing/digital/media -- jamais CEO ni Head of Sales). Ne remplit que
+ // les champs vides, n'écrase jamais un contact déjà renseigné à la main.
+ $('#findMarketingContact').onclick=async()=>{
+  const status=$('#findContactStatus');
+  status.textContent='Recherche du contact marketing/digital en cours...';
   try{
-   const r=await fetch('/.netlify/functions/find-email',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({fullName,company:p.company,domain:$('#dDomain').value.trim()})});
+   const r=await fetch('/.netlify/functions/find-marketing-contacts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({company:p.company,domain:$('#dDomain').value.trim()})});
    const data=await r.json();
    if(!r.ok)throw new Error(data.error||'Recherche indisponible');
-   if(!data.found){status.textContent=`Aucun email trouvé pour ${fullName} via Hunter.io -- à chercher manuellement.`;return}
-   $('#'+emailFieldId).value=data.email;
-   status.textContent=`Email trouvé : ${data.email} (confiance ${data.confidence}%${data.verified?', vérifié':''}${data.position?', poste : '+data.position:''}). Pense à cliquer Enregistrer.`;
-   toast('Email trouvé');
+   if(!data.found){status.textContent=`Aucun contact marketing/digital trouvé automatiquement (${data.reason||'raison inconnue'}) -- à chercher manuellement.`;return}
+   let filled=[];
+   if(!$('#dName').value&&data.contact1){$('#dName').value=data.contact1.name;$('#dRole').value=data.contact1.role;$('#dEmail').value=data.contact1.email;$('#dLinkedin').value=data.contact1.linkedin;filled.push(`Contact 1 : ${data.contact1.name} (${data.contact1.role})`)}
+   if(!$('#dName2').value&&data.contact2){$('#dName2').value=data.contact2.name;$('#dRole2').value=data.contact2.role;$('#dEmail2').value=data.contact2.email;$('#dLinkedin2').value=data.contact2.linkedin;filled.push(`Contact 2 : ${data.contact2.name} (${data.contact2.role})`)}
+   status.textContent=filled.length?`Trouvé -- ${filled.join(' | ')}. Pense à cliquer Enregistrer.`:'Contact(s) déjà renseigné(s), rien écrasé.';
+   toast('Contact(s) trouvé(s)');
   }catch(e){
-   status.textContent=`Recherche d'email indisponible (${e.message}). Tu peux le chercher manuellement.`;
+   status.textContent=`Recherche indisponible (${e.message}). Tu peux chercher manuellement.`;
   }
- }
- $('#findCeoEmail').onclick=()=>findEmail('dCeo','dCeoEmail','CEO');
- $('#findHosEmail').onclick=()=>findEmail('dHos','dHosEmail','Head of Sales');
- // Enrichissement gratuit (API officielle Recherche d'Entreprises, INSEE/RNE).
- // N'écrase jamais un champ déjà rempli à la main -- affiche le résultat en
- // lecture seule, dirigeants présentés comme suggestion à vérifier.
+ };
+ // Enrichissement gratuit (API officielle Recherche d'Entreprises, INSEE/RNE)
+ // -- données sur l'entreprise elle-même (effectif, secteur, siège), pas sur
+ // un décideur. Résultat affiché en lecture seule.
  $('#enrichLead').onclick=async()=>{
   const el=$('#enrichResult');
   el.innerHTML='<p class="muted">Recherche dans le registre officiel des entreprises...</p>';
@@ -137,26 +146,38 @@ function openProspect(id){selected=prospects.find(p=>p.id===id);if(!selected)ret
    const d=await r.json();
    if(!r.ok)throw new Error(d.error||'Enrichissement indisponible');
    if(!d.found){el.innerHTML=`<p class="muted">Non trouvé dans le registre officiel (${esc(d.reason||'raison inconnue')}).</p>`;return}
-   const dirigeantsHtml=d.dirigeants&&d.dirigeants.length?`<br>Dirigeants déclarés (RNE, à vérifier) : ${d.dirigeants.map(x=>`${esc(x.nom)}${x.qualite?' ('+esc(x.qualite)+')':''}`).join(', ')}`:'';
-   el.innerHTML=`<p class="muted">Trouvé : <b>${esc(d.nomOfficiel)}</b> (SIREN ${esc(d.siren)})${d.effectif?'<br>Effectif : '+esc(d.effectif):''}${d.secteur?'<br>Secteur NAF : '+esc(d.secteur):''}${d.siege?'<br>Siège : '+esc(d.siege):''}${dirigeantsHtml}</p>`;
+   el.innerHTML=`<p class="muted">Trouvé : <b>${esc(d.nomOfficiel)}</b> (SIREN ${esc(d.siren)})${d.effectif?'<br>Effectif : '+esc(d.effectif):''}${d.secteur?'<br>Secteur NAF : '+esc(d.secteur):''}${d.siege?'<br>Siège : '+esc(d.siege):''}</p>`;
   }catch(e){
    el.innerHTML=`<p class="muted">Enrichissement indisponible (${esc(e.message)}).</p>`;
   }
  };
+ // Actions par contact : LinkedIn (ajout) et DM LinkedIn ouvrent le même
+ // profil (impossible d'automatiser un ajout/message LinkedIn sans
+ // contourner leurs protections, ce que l'app ne fait jamais) -- le clic
+ // Connecter/Message se fait ensuite à la main sur la page LinkedIn. Chaque
+ // clic est journalisé dans l'historique du prospect.
+ $$('[data-contact-action]').forEach(btn=>btn.onclick=()=>{
+  const action=btn.dataset.contactAction, slot=btn.dataset.slot;
+  const name=$('#dName'+(slot==='2'?'2':'')).value||`Contact ${slot}`;
+  const email=$('#dEmail'+(slot==='2'?'2':'')).value;
+  const linkedin=$('#dLinkedin'+(slot==='2'?'2':'')).value;
+  if(action==='email'){
+   if(!email)return toast('Ajoute un email pour ce contact');
+   $('#emailModalTitle').textContent=`Email — ${name} (${p.company})`;
+   $('#emTo').value=email;
+   $('#emSubject').value=`Échange — ${p.company} x Oligart`;
+   $('#emBody').value=$('#dMessage').value;
+   $('#emStatus').textContent='';
+   $('#emailModal').classList.add('open');
+   return;
+  }
+  if(!linkedin)return toast('Ajoute un lien LinkedIn pour ce contact');
+  window.open(linkedin,'_blank');
+  const note=action==='linkedin-add'?`Ajout LinkedIn envoyé à ${name}`:`DM LinkedIn envoyé à ${name}`;
+  addTimelineEntry(p,{channel:'linkedin',type:'manual',note});
+  toast('Action journalisée');
+ });
  $('#copyDm').onclick=async()=>{await navigator.clipboard.writeText($('#dMessage').value);toast('Message copié')};
- $('#openMail').onclick=()=>{if(!$('#dEmail').value)return toast('Ajoute un email');location.href=`mailto:${encodeURIComponent($('#dEmail').value)}?subject=${encodeURIComponent('Échange — '+p.company+' x Oligart')}&body=${encodeURIComponent($('#dMessage').value)}`};
- // Envoi email : ouvre un modal éditable (destinataire/objet/message) plutôt
- // que d'envoyer directement -- l'utilisateur garde la main sur le contenu
- // final avant tout envoi réel via SMTP.
- $('#sendMail').onclick=()=>{
-  if(!$('#dEmail').value)return toast('Ajoute un email');
-  $('#emailModalTitle').textContent=`Email — ${p.company}`;
-  $('#emTo').value=$('#dEmail').value;
-  $('#emSubject').value=`Échange — ${p.company} x Oligart`;
-  $('#emBody').value=$('#dMessage').value;
-  $('#emStatus').textContent='';
-  $('#emailModal').classList.add('open');
- };
  // Signale aux modules additionnels (outreach, radar, ai) que la fiche est ouverte,
  // pour qu'ils puissent injecter leur contenu dans #drawerExtra sans toucher au coeur.
  try{document.dispatchEvent(new CustomEvent('oligart:prospect-opened',{detail:{id:p.id}}))}catch{/* no-op si CustomEvent indisponible */}
