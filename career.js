@@ -14,6 +14,10 @@ const today=()=>new Date().toISOString().slice(0,10);
 let opportunities=[];
 let suggestions=[];
 let suggestionsLastRun=null;
+let freeJobs=[];
+let freeJobsLastRun=null;
+const FREE_STATUS_LABELS={new:'Nouveau',saved:'Sauvegardé',to_apply:'À candidater',applied:'Candidature envoyée',interview:'Entretien',rejected:'Refusé',archived:'Archivé'};
+const TIER_LABELS={excellent:'🔥 Excellent match',good:'🟢 Bon match',watch:'🟡 À regarder'};
 function load(){
  try{const stored=JSON.parse(localStorage.getItem(KEY)||'null');opportunities=Array.isArray(stored)?stored:[]}
  catch{opportunities=[]}
@@ -45,6 +49,83 @@ async function fetchSuggestions(){
   suggestions=[];suggestionsLastRun=null;
  }
  renderSuggestions();
+}
+
+// --- Offres gratuites (Greenhouse/Lever, scorées localement, sans IA) ---
+async function fetchFreeJobs(){
+ try{
+  const r=await fetch('/.netlify/functions/career-free-data');
+  if(!r.ok)throw new Error('career-free-data indisponible');
+  const data=await r.json();
+  freeJobs=Array.isArray(data.jobs)?data.jobs:[];
+  freeJobsLastRun=data.lastRun||null;
+ }catch{
+  freeJobs=[];freeJobsLastRun=null;
+ }
+ renderFreeJobs();
+}
+
+function freeJobRow(j){
+ const tierBadge=j.tier?`<span class="pill">${esc(TIER_LABELS[j.tier]||j.tier)}</span>`:'';
+ const reasons=(j.scoreReasons||[]).slice(0,6).map(esc).join(' · ');
+ return `<div class="row row-5" data-fp="${esc(j.fingerprint)}">
+  <b><a href="${esc(j.applyUrl||j.sourceUrl)}" target="_blank" rel="noopener">${esc(j.title)} ↗</a><br><span class="muted">${esc(j.company)} · ${esc(j.location||'lieu non précisé')}</span></b>
+  <span>${j.score}/100</span>
+  ${tierBadge}
+  <span class="muted" title="${reasons}">${reasons.slice(0,60)}${reasons.length>60?'…':''}</span>
+  <select data-status-fp="${esc(j.fingerprint)}">${Object.entries(FREE_STATUS_LABELS).map(([v,l])=>`<option value="${v}" ${j.status===v?'selected':''}>${l}</option>`).join('')}</select>
+ </div>`;
+}
+
+async function updateFreeJobStatus(fingerprint,status){
+ const job=freeJobs.find(j=>j.fingerprint===fingerprint);
+ if(job)job.status=status; // mise à jour optimiste, immédiate à l'écran
+ try{
+  await fetch('/.netlify/functions/career-free-status',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({fingerprint,status})});
+ }catch{
+  // La sauvegarde côté serveur peut échouer sans bloquer l'usage local -- le
+  // statut survivra jusqu'au prochain rafraîchissement de la page seulement.
+ }
+}
+
+function renderFreeJobs(){
+ const el=document.querySelector('#careerFreeJobs');
+ const statusEl=document.querySelector('#careerFreeStatus');
+ if(!el)return;
+ if(statusEl)statusEl.textContent=freeJobsLastRun?`Dernier scan : ${freeJobsLastRun}`:'Aucun scan effectué pour l\'instant.';
+ const visible=freeJobs.filter(j=>(j.score||0)>=60 && j.status!=='archived' && j.status!=='rejected').sort((a,b)=>(b.score||0)-(a.score||0)||(b.publishedAt||'').localeCompare(a.publishedAt||''));
+ if(!visible.length){
+  el.innerHTML='<p class="muted">Aucune offre à score ≥60 pour l\'instant. Clique "Actualiser les offres" pour lancer un scan (gratuit, Greenhouse + Lever, sans IA).</p>';
+  return;
+ }
+ const groups=[['excellent','excellent'],['good','good'],['watch','watch']];
+ el.innerHTML=groups.map(([tier])=>{
+  const items=visible.filter(j=>j.tier===tier);
+  if(!items.length)return '';
+  return `<p class="muted" style="margin:14px 0 6px"><b>${TIER_LABELS[tier]}</b> (${items.length})</p>${items.map(freeJobRow).join('')}`;
+ }).join('');
+ el.querySelectorAll('[data-status-fp]').forEach(sel=>sel.onchange=()=>updateFreeJobStatus(sel.dataset.statusFp,sel.value));
+}
+
+async function refreshFreeJobs(){
+ const btn=document.querySelector('#careerFreeRefresh');
+ const statusEl=document.querySelector('#careerFreeStatus');
+ if(btn)btn.disabled=true;
+ if(statusEl)statusEl.textContent='Scan en cours (Greenhouse + Lever, gratuit, sans IA)...';
+ try{
+  const r=await fetch('/.netlify/functions/career-free-trigger',{method:'POST'});
+  const data=await r.json().catch(()=>({}));
+  if(!r.ok)throw new Error(data.error||`Scan indisponible (code ${r.status})`);
+  const okList=(data.sitesOk||[]).length;
+  const failList=(data.sitesFailed||[]).length;
+  if(statusEl)statusEl.textContent=`Scan terminé : ${data.added} nouvelle(s) offre(s), ${data.updated} mise(s) à jour. ${okList} source(s) OK${failList?`, ${failList} en échec (slug à vérifier dans career-companies.json)`:''}.`;
+  await fetchFreeJobs();
+  if(window.Oligart)window.Oligart.toast('Scan carrière terminé');
+ }catch(e){
+  if(statusEl)statusEl.textContent=`Scan indisponible (${e.message}).`;
+ }finally{
+  if(btn)btn.disabled=false;
+ }
 }
 
 function acceptSuggestion(s){
@@ -130,4 +211,7 @@ function init(){
 }
 try{init()}catch(e){console.warn('[oligart] career module failed to init, rest of app unaffected:',e)}
 fetchSuggestions();
+fetchFreeJobs();
+const freeRefreshBtn=document.querySelector('#careerFreeRefresh');
+if(freeRefreshBtn)freeRefreshBtn.onclick=refreshFreeJobs;
 })();
