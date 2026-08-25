@@ -197,6 +197,7 @@ window.Oligart={
  esc,
  today,
  toast,
+ metric,
  STATUSES,
  messageFor,
  addTimelineEntry,

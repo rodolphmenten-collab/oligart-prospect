@@ -50,7 +50,54 @@ function renderNoAgency(){
  el.querySelectorAll('[data-id]').forEach(r=>r.onclick=()=>openProspect(r.dataset.id));
 }
 
-function renderDashboardExtra(){renderOpportunities();renderActivity();renderNoAgency()}
+function renderDashboardExtra(){renderOpportunities();renderActivity();renderNoAgency();renderTodayPanel()}
+
+// Panneau "Aujourd'hui" (section 16 du cahier des charges) : répond
+// directement à "qu'est-ce que je dois faire aujourd'hui ?", pas un
+// dashboard décoratif. Uniquement des métriques réellement calculables
+// depuis les données existantes -- pas de "pipeline €" par exemple,
+// puisqu'aucun champ de valeur de deal n'existe dans le schéma (mieux vaut
+// l'omettre que d'inventer un chiffre).
+async function renderTodayPanel(){
+ const el=document.querySelector('#todayPanel');
+ if(!el||!window.Oligart)return;
+ const {getProspects,metric}=window.Oligart;
+ const list=getProspects();
+ const t=new Date();const todayStr=t.toISOString().slice(0,10);
+ const weekAhead=new Date(t);weekAhead.setDate(weekAhead.getDate()+7);const weekStr=weekAhead.toISOString().slice(0,10);
+ const weekAgo=new Date(t);weekAgo.setDate(weekAgo.getDate()-7);const weekAgoStr=weekAgo.toISOString().slice(0,10);
+
+ const overdue=list.filter(p=>p.nextFollowUp&&p.nextFollowUp<todayStr).length;
+ const dueToday=list.filter(p=>p.nextFollowUp===todayStr).length;
+ const dueWeek=list.filter(p=>p.nextFollowUp&&p.nextFollowUp>todayStr&&p.nextFollowUp<=weekStr).length;
+
+ let emailsThisWeek=0;
+ list.forEach(p=>(p.timeline||[]).forEach(e=>{if(e.channel==='email'&&e.status==='sent'&&e.date>=weekAgoStr)emailsThisWeek++}));
+
+ const contacted=list.filter(p=>['Contacté','Réponse reçue','RDV pris'].includes(p.status)).length;
+ const replied=list.filter(p=>['Réponse reçue','RDV pris'].includes(p.status)).length;
+ const responseRate=contacted?Math.round((replied/contacted)*100):0;
+
+ let careerNew=0,careerExcellent=0;
+ try{
+  const r=await fetch('/.netlify/functions/career-free-data');
+  if(r.ok){
+   const data=await r.json();
+   const jobs=data.jobs||[];
+   careerNew=jobs.filter(j=>j.discoveredAt&&j.discoveredAt.slice(0,10)>=weekAgoStr).length;
+   careerExcellent=jobs.filter(j=>j.score>=85).length;
+  }
+ }catch{/* le panneau reste utile même si career-free-data est indisponible */}
+
+ el.innerHTML=[
+  metric(overdue,'relances en retard'),
+  metric(dueToday,'relances aujourd’hui'),
+  metric(dueWeek,'relances cette semaine'),
+  metric(emailsThisWeek,'emails envoyés (7j)'),
+  metric(responseRate+'%','taux de réponse'),
+  metric(careerExcellent,'excellents matchs carrière')
+ ].join('');
+}
 
 function init(){
  renderDashboardExtra(); // premier rendu immédiat
