@@ -21,7 +21,6 @@
 // rien donné du tout. Jamais de nom ou de lien inventé.
 const TARGET_ROLE_RE = /marketing|digital|m[ée]dia\b|media\b|communication|brand|acquisition|growth|publicit|advertis/i;
 const EXCLUDE_ROLE_RE = /\bceo\b|chief executive|founder|fondateur|pr[ée]sident|head of sales|sales director|directeur commercial|vp sales|account executive/i;
-const ROLE_QUERY_TERMS = '("Directeur Marketing" OR "Directeur Media" OR "Directeur de la Communication" OR "Head of Digital" OR "Head of Marketing" OR "Responsable Communication" OR "Responsable Marketing" OR "Chief Marketing Officer")';
 
 async function hunterDomainSearch(company, domain) {
   if (!process.env.HUNTER_API_KEY) return [];
@@ -52,13 +51,19 @@ function extractNameFromLinkedinTitle(title) {
   return head;
 }
 
-async function linkedinSearchViaTavily(company) {
+// Recherche directe sur LinkedIn via Tavily -- exactement ce qu'on ferait à
+// la main ("Hippopotamus directeur marketing" sur Google/LinkedIn). Tavily
+// est un moteur en LANGAGE NATUREL, pas Google : il ne comprend pas "site:",
+// les guillemets d'expression exacte ni "OR" comme opérateurs (vérifié --
+// une première version utilisant cette syntaxe ne renvoyait rien, corrigé).
+// La restriction de domaine passe uniquement par le paramètre include_domains.
+async function linkedinSearchViaTavily(query) {
   if (!process.env.TAVILY_API_KEY) return [];
   try {
     const r = await fetch("https://api.tavily.com/search", {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${process.env.TAVILY_API_KEY}` },
-      body: JSON.stringify({ query: `site:linkedin.com/in "${company}" ${ROLE_QUERY_TERMS}`, max_results: 5, include_domains: ["linkedin.com"] })
+      body: JSON.stringify({ query, max_results: 8, include_domains: ["linkedin.com"], search_depth: "advanced" })
     });
     if (!r.ok) return [];
     const data = await r.json();
@@ -68,7 +73,7 @@ async function linkedinSearchViaTavily(company) {
       const name = extractNameFromLinkedinTitle(hit.title);
       if (!name) continue; // titre pas au format attendu -- on n'invente pas un nom
       const roleMatch = (hit.title.match(/-\s*([^-|]+?)\s*-\s*[^-|]+\|/) || [])[1];
-      out.push({ name, role: roleMatch || "", email: "", linkedin: hit.url });
+      out.push({ name, role: roleMatch || "", title: hit.title, linkedin: hit.url });
     }
     return out;
   } catch { return []; }
@@ -101,12 +106,17 @@ exports.handler = async (event) => {
     let candidates = await hunterDomainSearch(company, domain);
     let source = "hunter";
     if (!candidates.length) {
-      const hits = await linkedinSearchViaTavily(company || domain);
-      // Filtre de pertinence : le titre du résultat LinkedIn doit contenir
-      // un terme de poste marketing/digital/media pour être retenu comme
-      // candidat -- sinon on ne sait pas si cette personne a un rapport
-      // avec le poste recherché, même si son nom est bien formé.
-      candidates = hits.filter(h => h.role && TARGET_ROLE_RE.test(h.role));
+      // Requête en langage naturel (pas de syntaxe Google) -- Tavily
+      // comprend le sens, pas les opérateurs booléens.
+      const hits = await linkedinSearchViaTavily(`${company || domain} directeur marketing responsable marketing head of digital directeur communication`);
+      // Filtre de pertinence : le TITRE ENTIER du résultat LinkedIn doit
+      // contenir un terme marketing/digital/media pour être retenu --
+      // testé sur le titre complet plutôt que sur un segment extrait,
+      // car l'extraction du poste est fragile selon le format exact du
+      // titre (variable d'un profil à l'autre).
+      candidates = hits
+        .filter(h => TARGET_ROLE_RE.test(h.title))
+        .map(h => ({ name: h.name, role: h.role, email: "", linkedin: h.linkedin }));
       source = "linkedin_search";
     }
 
@@ -120,7 +130,7 @@ exports.handler = async (event) => {
       // compléter -- même garde-fou anti-homonyme (nom de famille requis
       // dans l'URL/titre) que pour l'email finder.
       if (!linkedin && process.env.TAVILY_API_KEY && c.name) {
-        const hits = await linkedinSearchViaTavily(`${c.name} ${company || domain}`).catch(() => []);
+        const hits = await linkedinSearchViaTavily(`${c.name} ${company || domain} LinkedIn`).catch(() => []);
         const lastName = c.name.trim().split(/\s+/).pop()?.toLowerCase() || "";
         const match = hits.find(h => h.linkedin.toLowerCase().includes(lastName));
         if (match) linkedin = match.linkedin;
