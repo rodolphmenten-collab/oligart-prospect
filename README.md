@@ -30,8 +30,14 @@ explicite) si une donnée manque ou qu'un appel réseau échoue.**
      Optique, Éducation, Bricolage, Hôtellerie, etc.)
    - **Tourisme International** (43) — offices de tourisme, compagnies
      aériennes, chaînes hôtelières communiquant en France
-   - **Agences Média Indépendantes** (21) — agences de conseil/achat média
-     digital françaises
+   - **Agences Média Indépendantes** (28) — agences de conseil/achat média
+     digital françaises. Positionnement distinct pour cette catégorie :
+     Rodolph ne leur pitche pas du media buying (ce serait leur propre
+     métier), mais un accompagnement freelance/conseil sur le business
+     development, le management commercial et le media buying opérationnel
+     — jamais formulé comme du "go-to-market". Recherche de contact ciblée
+     sur le **CEO/fondateur ou le Head of Digital** (pas le directeur
+     marketing, sans objet pour une agence).
    - **Agences Pharma** (14) — agences spécialisées labos/biotech/medtech
 
    **Sans agence media identifiée** — sous-ensemble transversal (pas une 5e
