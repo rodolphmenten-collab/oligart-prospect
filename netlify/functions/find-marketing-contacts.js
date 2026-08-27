@@ -22,9 +22,11 @@
 // Deux modes de recherche selon la typologie du prospect :
 // - "annonceur" (défaut) : cherche le décideur marketing/media/digital
 //   (celui qui gère le budget pub), exclut CEO/Sales explicitement.
-// - "agence" (agences media indépendantes) : cherche le CEO/fondateur ou le
-//   Head of Digital -- ce sont elles-mêmes des agences media, leur pitcher
-//   un décideur marketing n'aurait pas de sens.
+// - "agence" (agences media indépendantes) : cherche le CEO/fondateur, le
+//   Head of Digital, OU le Head of Sales/Directeur Commercial -- ces
+//   agences (souvent en région, hors Paris) ont typiquement besoin de
+//   profils commerciaux, et c'est exactement l'angle du pitch freelance
+//   de Rodolph (business dev / management commercial).
 const ROLE_TARGETS = {
   annonceur: {
     target: /marketing|digital|m[ée]dia\b|media\b|communication|brand|acquisition|growth|publicit|advertis/i,
@@ -32,9 +34,9 @@ const ROLE_TARGETS = {
     queryTerms: "directeur marketing responsable marketing head of digital directeur communication"
   },
   agence: {
-    target: /\bceo\b|chief executive|founder|fondateur|pr[ée]sident|directeur g[ée]n[ée]ral|head of digital|dirigeant|g[ée]rant/i,
-    exclude: /head of sales|sales director|directeur commercial|vp sales|account executive|directeur marketing|responsable marketing|chief marketing/i,
-    queryTerms: "CEO fondateur président directeur général head of digital"
+    target: /\bceo\b|chief executive|founder|fondateur|pr[ée]sident|directeur g[ée]n[ée]ral|head of digital|dirigeant|g[ée]rant|head of sales|sales director|directeur commercial|vp sales/i,
+    exclude: /account executive|directeur marketing|responsable marketing|chief marketing|community manager|charg[ée] de communication/i,
+    queryTerms: "CEO fondateur président directeur général head of digital head of sales directeur commercial"
   }
 };
 
@@ -139,10 +141,10 @@ async function aiPickCandidates(hits, company, mode) {
   try {
     const hitsText = hits.map((h, i) => `[${i}] Titre: "${h.title}"\nURL: ${h.linkedin}\nExtrait: "${(h.content || "").slice(0, 300)}"`).join("\n\n");
     const roleInstruction = mode === "agence"
-      ? 'Ont un poste de CEO, fondateur, président, directeur général ou Head of Digital (PAS un poste marketing/communication classique, PAS commercial/ventes)'
+      ? 'Ont un poste de CEO, fondateur, président, directeur général, Head of Digital, Head of Sales ou Directeur Commercial (PAS un poste marketing/communication classique, PAS community manager)'
       : 'Ont un poste lié au marketing, à la communication, au digital ou aux médias (pas CEO, pas commercial/ventes, pas un métier sans rapport comme cuisinier ou RH)';
     const targetDescription = mode === "agence"
-      ? "trouver le CEO/fondateur ou le Head of Digital de l'agence media indépendante française"
+      ? "trouver le CEO/fondateur, le Head of Digital ou le responsable commercial (Head of Sales/Directeur Commercial) de l'agence media indépendante française"
       : "trouver le décideur qui gère le budget media/marketing/digital de l'entreprise française";
     const prompt = `Voici des résultats de recherche LinkedIn pour ${targetDescription} "${company}".\n\n${hitsText}\n\nAnalyse chaque résultat et identifie UNIQUEMENT les personnes qui :\n1. Travaillent réellement pour "${company}" en FRANCE (pas une entreprise homonyme dans un autre pays -- vérifie bien qu'il s'agit de la bonne entité)\n2. ${roleInstruction}\n\nRéponds UNIQUEMENT en JSON valide, sans texte autour, format exact :\n{"candidates": [{"index": 0, "name": "Prénom Nom", "role": "intitulé du poste", "reasoning": "pourquoi cette personne correspond, en une phrase"}]}\n\nSi aucun résultat ne correspond clairement, réponds {"candidates": []}. Ne devine jamais -- si un doute sérieux existe sur l'entreprise ou le poste, exclus ce résultat.`;
 
@@ -196,7 +198,13 @@ exports.handler = async (event) => {
         source = "linkedin_search_ai";
       } else {
         candidates = hits
-          .filter(h => target.test(h.title) && isLikelyFrance(h))
+          // Test sur le POSTE extrait (h.role), pas sur le titre entier --
+          // beaucoup d'agences ont "Media" dans leur propre nom (Cho You
+          // Media, Place To Be Media...), donc tester sur le titre complet
+          // faisait passer n'importe quel poste par simple contamination du
+          // nom d'entreprise (détecté en testant Head of Sales chez une
+          // agence "X Media" -- passait à tort le filtre marketing/media).
+          .filter(h => h.role && target.test(h.role) && isLikelyFrance(h))
           .map(h => ({ name: h.name, role: h.role, email: "", linkedin: h.linkedin }));
         source = "linkedin_search";
       }
