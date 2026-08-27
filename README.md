@@ -155,9 +155,15 @@ Nouvelle vue dédiée, deux onglets :
   prospects en une seule liste chronologique, cliquable vers la fiche.
   Aucun appel réseau : tout vient du `localStorage` déjà là.
 - **Boîte de réception** — connexion IMAP réelle sur la boîte Gandi
-  (`imap.gandi.net:993`), mêmes identifiants que l'envoi SMTP
-  (`SMTP_USER`/`SMTP_PASS`) — rien de nouveau à configurer. Aperçu des 30
-  derniers emails reçus (expéditeur, objet, date, statut lu/non-lu). Si les
+  (`mail.gandi.net:993`, même hôte que le SMTP — corrigé après une
+  première tentative sur "imap.gandi.net", qui n'existe pas), mêmes
+  identifiants que l'envoi SMTP (`SMTP_USER`/`SMTP_PASS`) — rien de
+  nouveau à configurer. Aperçu des 30 derniers emails reçus (expéditeur,
+  objet, date, statut lu/non-lu). Un clic sur un message l'ouvre
+  réellement (contenu complet récupéré à la demande via `mailparser`,
+  affiché dans un modal) plutôt que de rester une simple liste. Si
+  l'expéditeur correspond à un contact déjà connu (contact 1/2, CEO, Head
+  of Sales), un bouton permet d'ouvrir directement sa fiche. Si les
   identifiants sont absents ou la connexion échoue, message d'erreur clair
   affiché (jamais une boîte vide silencieuse qui laisserait croire à
   l'absence d'emails).
