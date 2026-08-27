@@ -5,6 +5,7 @@
   "dependencies": {
     "nodemailer": "^6.9.16",
     "imapflow": "^1.0.161",
+    "mailparser": "^3.7.2",
     "@netlify/blobs": "^10.7.12",
     "@netlify/functions": "^5.3.0"
   }
