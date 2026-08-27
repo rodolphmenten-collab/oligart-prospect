@@ -100,7 +100,7 @@ function messageFor(p){
  // aucun sens, c'est leur propre métier) -- ici Rodolph se positionne en
  // freelance/conseil sur ses domaines d'expertise (biz dev, management
  // commercial, media buying), jamais formulé comme du "go-to-market".
- const AGENCY_CATEGORIES=['Agences Média Indépendantes','Agences Média (Groupes)'];
+ const AGENCY_CATEGORIES=['Agences Média Indépendantes'];
  if(AGENCY_CATEGORIES.includes(p.category)){
   return `Bonjour${name},\n\nJe me permets de vous contacter au sujet de ${p.company}.\n\nAprès 15 ans dans l'AdTech, le SaaS et les médias (dont plusieurs postes de direction commerciale), je propose aujourd'hui un accompagnement freelance/conseil pour les agences media indépendantes, centré sur le business development, le management commercial et le media buying opérationnel.\n\nConcrètement : structuration ou renfort ponctuel de l'équipe commerciale, développement du portefeuille annonceurs, accompagnement sur des dossiers d'achat media complexes.\n\nJe serais ravi d'échanger 20 minutes pour voir si ça peut avoir du sens pour ${p.company} en ce moment.\n\nMon site : https://oligart-agency.com\n\nBien à vous,\nRodolph Menten`;
  }

@@ -30,25 +30,24 @@ explicite) si une donnée manque ou qu'un appel réseau échoue.**
      Optique, Éducation, Bricolage, Hôtellerie, etc.)
    - **Tourisme International** (43) — offices de tourisme, compagnies
      aériennes, chaînes hôtelières communiquant en France
-   - **Agences Média Indépendantes** (28) — agences de conseil/achat média
-     digital françaises, boutiques indépendantes (sourcées AAMI + recherche
-     de marché complémentaire).
-   - **Agences Média (Groupes)** (21) — marques d'agences des grands
-     groupes (Publicis Media : Zenith/Starcom/Spark Foundry/Blue449/
-     Performics/Publicis Connect ; Omnicom Media Group : OMD/PHD/Fuse ;
-     GroupM/WPP : Wavemaker/EssenceMediacom/Mindshare ; Dentsu :
-     Carat/iProspect/DentsuX ; Havas : Havas Media/Arena Media/Agence 79 ;
-     Mediabrands/IPG : UM/Initiative ; + Anacrouse), sourcées de l'**UDECAM**
-     (syndicat professionnel officiel, 36 agences/groupes membres
-     représentant 98% du marché français des agences media).
+   - **Agences Média Indépendantes** (53) — agences de conseil/achat média
+     digital françaises, **exclusivement indépendantes** (jamais de Big
+     Six — Publicis/Omnicom/WPP/Dentsu/Havas/IPG — explicitement exclues sur
+     demande, ce sont de grandes structures où un pitch freelance/conseil
+     n'a pas de sens). Sourcées de trois façons : AAMI (12 membres, dont 10
+     déjà présents), recherche de marché complémentaire (7 agences), et le
+     **Top 50 des agences de marketing digital France 2026** (digirocks.fr,
+     25 agences sélectionnées pour leur volet media buying/paid media réel
+     — SEA, social ads, programmatique — en excluant les agences pure
+     création/SEO/dev sans achat media).
 
-   Positionnement commun aux deux catégories agences : Rodolph ne leur
-   pitche pas du media buying (ce serait leur propre métier), mais un
-   accompagnement freelance/conseil sur le business development, le
-   management commercial et le media buying opérationnel — jamais formulé
-   comme du "go-to-market". Recherche de contact ciblée sur le **CEO/
-   fondateur, le Head of Digital ou le Head of Sales/Directeur Commercial**
-   (pas le directeur marketing, sans objet pour une agence).
+   Positionnement pour cette catégorie : Rodolph ne leur pitche pas du
+   media buying (ce serait leur propre métier), mais un accompagnement
+   freelance/conseil sur le business development, le management commercial
+   et le media buying opérationnel — jamais formulé comme du
+   "go-to-market". Recherche de contact ciblée sur le **CEO/fondateur, le
+   Head of Digital ou le Head of Sales/Directeur Commercial** (pas le
+   directeur marketing, sans objet pour une agence).
    - **Agences Pharma** (14) — agences spécialisées labos/biotech/medtech
 
    **Sans agence media identifiée** — sous-ensemble transversal (pas une 5e
