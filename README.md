@@ -31,13 +31,24 @@ explicite) si une donnée manque ou qu'un appel réseau échoue.**
    - **Tourisme International** (43) — offices de tourisme, compagnies
      aériennes, chaînes hôtelières communiquant en France
    - **Agences Média Indépendantes** (28) — agences de conseil/achat média
-     digital françaises. Positionnement distinct pour cette catégorie :
-     Rodolph ne leur pitche pas du media buying (ce serait leur propre
-     métier), mais un accompagnement freelance/conseil sur le business
-     development, le management commercial et le media buying opérationnel
-     — jamais formulé comme du "go-to-market". Recherche de contact ciblée
-     sur le **CEO/fondateur ou le Head of Digital** (pas le directeur
-     marketing, sans objet pour une agence).
+     digital françaises, boutiques indépendantes (sourcées AAMI + recherche
+     de marché complémentaire).
+   - **Agences Média (Groupes)** (21) — marques d'agences des grands
+     groupes (Publicis Media : Zenith/Starcom/Spark Foundry/Blue449/
+     Performics/Publicis Connect ; Omnicom Media Group : OMD/PHD/Fuse ;
+     GroupM/WPP : Wavemaker/EssenceMediacom/Mindshare ; Dentsu :
+     Carat/iProspect/DentsuX ; Havas : Havas Media/Arena Media/Agence 79 ;
+     Mediabrands/IPG : UM/Initiative ; + Anacrouse), sourcées de l'**UDECAM**
+     (syndicat professionnel officiel, 36 agences/groupes membres
+     représentant 98% du marché français des agences media).
+
+   Positionnement commun aux deux catégories agences : Rodolph ne leur
+   pitche pas du media buying (ce serait leur propre métier), mais un
+   accompagnement freelance/conseil sur le business development, le
+   management commercial et le media buying opérationnel — jamais formulé
+   comme du "go-to-market". Recherche de contact ciblée sur le **CEO/
+   fondateur, le Head of Digital ou le Head of Sales/Directeur Commercial**
+   (pas le directeur marketing, sans objet pour une agence).
    - **Agences Pharma** (14) — agences spécialisées labos/biotech/medtech
 
    **Sans agence media identifiée** — sous-ensemble transversal (pas une 5e

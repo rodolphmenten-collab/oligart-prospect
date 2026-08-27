@@ -178,7 +178,8 @@ exports.handler = async (event) => {
     if (!process.env.HUNTER_API_KEY && !process.env.TAVILY_API_KEY) {
       return { statusCode: 501, body: JSON.stringify({ error: "Ni HUNTER_API_KEY ni TAVILY_API_KEY configurées sur Netlify" }) };
     }
-    const mode = category === "Agences Média Indépendantes" ? "agence" : "annonceur";
+    const AGENCY_CATEGORIES = ["Agences Média Indépendantes", "Agences Média (Groupes)"];
+    const mode = AGENCY_CATEGORIES.includes(category) ? "agence" : "annonceur";
     const { target, queryTerms } = targetsFor(mode);
 
     let candidates = await hunterDomainSearch(company, domain, mode);
