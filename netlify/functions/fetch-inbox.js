@@ -1,7 +1,10 @@
 // Lit les emails récents de la boîte de réception Gandi via IMAP, avec les
 // mêmes identifiants que l'envoi SMTP déjà configuré (SMTP_USER/SMTP_PASS) --
-// pas de nouvelle variable d'environnement à ajouter. Gandi expose IMAP sur
-// imap.gandi.net:993 (SSL), même compte que mail.gandi.net pour le SMTP.
+// pas de nouvelle variable d'environnement à ajouter. Gandi expose IMAP et
+// SMTP sur le MÊME hôte (mail.gandi.net), seul le port change (993 pour
+// IMAP SSL) -- confirmé via la documentation officielle Gandi après un
+// premier essai raté sur "imap.gandi.net" (hôte inexistant, DNS ENOTFOUND
+// en conditions réelles).
 //
 // Honnêteté/résilience : si les identifiants ne sont pas configurés, ou si
 // la connexion IMAP échoue, renvoie une erreur claire plutôt qu'une liste
@@ -14,7 +17,7 @@ exports.handler = async () => {
     return { statusCode: 501, body: JSON.stringify({ error: "SMTP_USER/SMTP_PASS non configurées sur Netlify" }) };
   }
   const client = new ImapFlow({
-    host: process.env.IMAP_HOST || "imap.gandi.net",
+    host: process.env.IMAP_HOST || "mail.gandi.net",
     port: Number(process.env.IMAP_PORT || 993),
     secure: true,
     auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
