@@ -19,11 +19,32 @@
 // Honnêteté : found:true dès qu'un nom + LinkedIn réels sont identifiés,
 // même sans email. found:false uniquement si aucune des deux étapes n'a
 // rien donné du tout. Jamais de nom ou de lien inventé.
-const TARGET_ROLE_RE = /marketing|digital|m[ée]dia\b|media\b|communication|brand|acquisition|growth|publicit|advertis/i;
-const EXCLUDE_ROLE_RE = /\bceo\b|chief executive|founder|fondateur|pr[ée]sident|head of sales|sales director|directeur commercial|vp sales|account executive/i;
+// Deux modes de recherche selon la typologie du prospect :
+// - "annonceur" (défaut) : cherche le décideur marketing/media/digital
+//   (celui qui gère le budget pub), exclut CEO/Sales explicitement.
+// - "agence" (agences media indépendantes) : cherche le CEO/fondateur, le
+//   Head of Digital, OU le Head of Sales/Directeur Commercial -- ces
+//   agences (souvent en région, hors Paris) ont typiquement besoin de
+//   profils commerciaux, et c'est exactement l'angle du pitch freelance
+//   de Rodolph (business dev / management commercial).
+const ROLE_TARGETS = {
+  annonceur: {
+    target: /marketing|digital|m[ée]dia\b|media\b|communication|brand|acquisition|growth|publicit|advertis/i,
+    exclude: /\bceo\b|chief executive|founder|fondateur|pr[ée]sident|head of sales|sales director|directeur commercial|vp sales|account executive/i,
+    queryTerms: "directeur marketing responsable marketing head of digital directeur communication"
+  },
+  agence: {
+    target: /\bceo\b|chief executive|founder|fondateur|pr[ée]sident|directeur g[ée]n[ée]ral|head of digital|dirigeant|g[ée]rant|head of sales|sales director|directeur commercial|vp sales/i,
+    exclude: /account executive|directeur marketing|responsable marketing|chief marketing|community manager|charg[ée] de communication/i,
+    queryTerms: "CEO fondateur président directeur général head of digital head of sales directeur commercial"
+  }
+};
 
-async function hunterDomainSearch(company, domain) {
+function targetsFor(mode) { return ROLE_TARGETS[mode] || ROLE_TARGETS.annonceur; }
+
+async function hunterDomainSearch(company, domain, mode) {
   if (!process.env.HUNTER_API_KEY) return [];
+  const { target, exclude } = targetsFor(mode);
   const params = new URLSearchParams({ api_key: process.env.HUNTER_API_KEY, limit: "10" });
   if (domain) params.set("domain", domain); else params.set("company", company);
   try {
@@ -31,7 +52,7 @@ async function hunterDomainSearch(company, domain) {
     if (!r.ok) return [];
     const data = await r.json();
     return (data.data?.emails || [])
-      .filter(e => e.position && TARGET_ROLE_RE.test(e.position) && !EXCLUDE_ROLE_RE.test(e.position))
+      .filter(e => e.position && target.test(e.position) && !exclude.test(e.position))
       .sort((a, b) => (b.confidence || 0) - (a.confidence || 0))
       .map(e => ({ name: [e.first_name, e.last_name].filter(Boolean).join(" "), role: e.position || "", email: e.value, linkedin: e.linkedin || "" }));
   } catch { return []; }
@@ -115,11 +136,17 @@ async function hunterEmailFinder(fullName, company) {
 // bloquant).
 const AI_MODEL = process.env.ANTHROPIC_MODEL || "claude-sonnet-4-6";
 
-async function aiPickCandidates(hits, company) {
+async function aiPickCandidates(hits, company, mode) {
   if (!process.env.ANTHROPIC_API_KEY || !hits.length) return null;
   try {
     const hitsText = hits.map((h, i) => `[${i}] Titre: "${h.title}"\nURL: ${h.linkedin}\nExtrait: "${(h.content || "").slice(0, 300)}"`).join("\n\n");
-    const prompt = `Voici des résultats de recherche LinkedIn pour trouver le décideur qui gère le budget media/marketing/digital de l'entreprise française "${company}".\n\n${hitsText}\n\nAnalyse chaque résultat et identifie UNIQUEMENT les personnes qui :\n1. Travaillent réellement pour "${company}" en FRANCE (pas une entreprise homonyme dans un autre pays -- vérifie bien qu'il s'agit de la bonne entité)\n2. Ont un poste lié au marketing, à la communication, au digital ou aux médias (pas CEO, pas commercial/ventes, pas un métier sans rapport comme cuisinier ou RH)\n\nRéponds UNIQUEMENT en JSON valide, sans texte autour, format exact :\n{"candidates": [{"index": 0, "name": "Prénom Nom", "role": "intitulé du poste", "reasoning": "pourquoi cette personne correspond, en une phrase"}]}\n\nSi aucun résultat ne correspond clairement, réponds {"candidates": []}. Ne devine jamais -- si un doute sérieux existe sur l'entreprise ou le poste, exclus ce résultat.`;
+    const roleInstruction = mode === "agence"
+      ? 'Ont un poste de CEO, fondateur, président, directeur général, Head of Digital, Head of Sales ou Directeur Commercial (PAS un poste marketing/communication classique, PAS community manager)'
+      : 'Ont un poste lié au marketing, à la communication, au digital ou aux médias (pas CEO, pas commercial/ventes, pas un métier sans rapport comme cuisinier ou RH)';
+    const targetDescription = mode === "agence"
+      ? "trouver le CEO/fondateur, le Head of Digital ou le responsable commercial (Head of Sales/Directeur Commercial) de l'agence media indépendante française"
+      : "trouver le décideur qui gère le budget media/marketing/digital de l'entreprise française";
+    const prompt = `Voici des résultats de recherche LinkedIn pour ${targetDescription} "${company}".\n\n${hitsText}\n\nAnalyse chaque résultat et identifie UNIQUEMENT les personnes qui :\n1. Travaillent réellement pour "${company}" en FRANCE (pas une entreprise homonyme dans un autre pays -- vérifie bien qu'il s'agit de la bonne entité)\n2. ${roleInstruction}\n\nRéponds UNIQUEMENT en JSON valide, sans texte autour, format exact :\n{"candidates": [{"index": 0, "name": "Prénom Nom", "role": "intitulé du poste", "reasoning": "pourquoi cette personne correspond, en une phrase"}]}\n\nSi aucun résultat ne correspond clairement, réponds {"candidates": []}. Ne devine jamais -- si un doute sérieux existe sur l'entreprise ou le poste, exclus ce résultat.`;
 
     const r = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -144,39 +171,49 @@ exports.handler = async (event) => {
     return { statusCode: 405, body: JSON.stringify({ error: "Méthode non autorisée" }) };
   }
   try {
-    const { company, domain } = JSON.parse(event.body || "{}");
+    const { company, domain, category } = JSON.parse(event.body || "{}");
     if (!company && !domain) {
       return { statusCode: 400, body: JSON.stringify({ error: "Entreprise ou domaine requis" }) };
     }
     if (!process.env.HUNTER_API_KEY && !process.env.TAVILY_API_KEY) {
       return { statusCode: 501, body: JSON.stringify({ error: "Ni HUNTER_API_KEY ni TAVILY_API_KEY configurées sur Netlify" }) };
     }
+    const AGENCY_CATEGORIES = ["Agences Média Indépendantes"];
+    const mode = AGENCY_CATEGORIES.includes(category) ? "agence" : "annonceur";
+    const { target, queryTerms } = targetsFor(mode);
 
-    let candidates = await hunterDomainSearch(company, domain);
+    let candidates = await hunterDomainSearch(company, domain, mode);
     let source = "hunter";
     if (!candidates.length) {
       // "France" explicitement dans la requête : sans ça, une entreprise au
       // nom homonyme à l'étranger (ex. un "Intersport" américain sans
       // rapport) peut ressortir en premier -- vu en conditions réelles.
-      const hits = await linkedinSearchViaTavily(`${company || domain} France directeur marketing responsable marketing head of digital directeur communication`);
+      const hits = await linkedinSearchViaTavily(`${company || domain} France ${queryTerms}`);
 
       // Priorité à la désambiguïsation IA (raisonne vraiment sur chaque
       // résultat) ; repli sur le filtrage par mots-clés/liste de blocage
       // si pas de clé Anthropic ou si l'appel échoue.
-      const aiPicked = await aiPickCandidates(hits, company || domain);
+      const aiPicked = await aiPickCandidates(hits, company || domain, mode);
       if (aiPicked && aiPicked.length) {
         candidates = aiPicked;
         source = "linkedin_search_ai";
       } else {
         candidates = hits
-          .filter(h => TARGET_ROLE_RE.test(h.title) && isLikelyFrance(h))
+          // Test sur le POSTE extrait (h.role), pas sur le titre entier --
+          // beaucoup d'agences ont "Media" dans leur propre nom (Cho You
+          // Media, Place To Be Media...), donc tester sur le titre complet
+          // faisait passer n'importe quel poste par simple contamination du
+          // nom d'entreprise (détecté en testant Head of Sales chez une
+          // agence "X Media" -- passait à tort le filtre marketing/media).
+          .filter(h => h.role && target.test(h.role) && isLikelyFrance(h))
           .map(h => ({ name: h.name, role: h.role, email: "", linkedin: h.linkedin }));
         source = "linkedin_search";
       }
     }
 
     if (!candidates.length) {
-      return { statusCode: 200, body: JSON.stringify({ found: false, reason: "Aucun contact marketing/digital/media trouvé, ni via Hunter ni via recherche LinkedIn directe" }) };
+      const label = mode === "agence" ? "CEO/fondateur/Head of Digital" : "marketing/digital/media";
+      return { statusCode: 200, body: JSON.stringify({ found: false, reason: `Aucun contact ${label} trouvé, ni via Hunter ni via recherche LinkedIn directe` }) };
     }
 
     async function finalize(c) {
