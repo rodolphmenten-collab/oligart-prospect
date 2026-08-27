@@ -30,7 +30,19 @@ async function renderInbox(){
   if(!r.ok)throw new Error(data.error||'Boîte de réception indisponible');
   if(!data.messages.length){el.innerHTML='<p class="muted">Boîte de réception vide.</p>';return}
   const esc=window.Oligart?.esc||(s=>s);
-  el.innerHTML=data.messages.map(m=>`<div class="row"><b${m.unread?' style="color:#fff"':''}>${esc(m.fromName||m.from)}</b><span>${esc(m.from)}</span><span>${esc(m.subject)}</span><span class="muted">${m.date?new Date(m.date).toLocaleString('fr-FR'):''}</span></div>`).join('');
+  el.innerHTML=data.messages.map((m,i)=>`<div class="row" data-idx="${i}" style="cursor:pointer"><b${m.unread?' style="color:#fff"':''}>${esc(m.fromName||m.from)}</b><span>${esc(m.from)}</span><span>${esc(m.subject)}</span><span class="muted">${m.date?new Date(m.date).toLocaleString('fr-FR'):''}</span></div>`).join('');
+  // Clic : cherche un prospect dont un des champs email correspond à
+  // l'expéditeur (contact 1/2, CEO, Head of Sales) et ouvre sa fiche.
+  // Si aucun ne correspond, message clair plutôt qu'un clic silencieux.
+  el.querySelectorAll('[data-idx]').forEach(row=>row.onclick=()=>{
+   const msg=data.messages[row.dataset.idx];
+   const fromEmail=(msg.from||'').toLowerCase();
+   if(!fromEmail){window.Oligart?.toast('Adresse expéditeur inconnue');return}
+   const EMAIL_FIELDS=['contactEmail','contact2Email','ceoEmail','headOfSalesEmail'];
+   const match=window.Oligart?.getProspects().find(p=>EMAIL_FIELDS.some(f=>(p[f]||'').toLowerCase()===fromEmail));
+   if(match){window.Oligart.openProspect(match.id)}
+   else window.Oligart?.toast(`Aucun prospect trouvé pour ${msg.from}`);
+  });
  }catch(e){
   el.innerHTML=`<p class="muted">Boîte de réception indisponible (${e.message}). Vérifie SMTP_USER/SMTP_PASS sur Netlify.</p>`;
  }
