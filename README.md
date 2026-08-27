@@ -148,6 +148,20 @@ Chaque module additionnel (`priorities.js`, `outreach.js`, `radar.js`,
 - est encapsulé dans un `try/catch` à l'initialisation et au rendu : une
   erreur dans un module n'empêche jamais le reste de l'app de fonctionner.
 
+## Vue Emails (envoyés + boîte de réception)
+
+Nouvelle vue dédiée, deux onglets :
+- **Envoyés** — agrège les entrées `timeline` (channel `email`) de tous les
+  prospects en une seule liste chronologique, cliquable vers la fiche.
+  Aucun appel réseau : tout vient du `localStorage` déjà là.
+- **Boîte de réception** — connexion IMAP réelle sur la boîte Gandi
+  (`imap.gandi.net:993`), mêmes identifiants que l'envoi SMTP
+  (`SMTP_USER`/`SMTP_PASS`) — rien de nouveau à configurer. Aperçu des 30
+  derniers emails reçus (expéditeur, objet, date, statut lu/non-lu). Si les
+  identifiants sont absents ou la connexion échoue, message d'erreur clair
+  affiché (jamais une boîte vide silencieuse qui laisserait croire à
+  l'absence d'emails).
+
 ## Mise en ligne (Netlify)
 
 1. Connecter le dépôt sur Netlify, laisser les réglages détectés depuis `netlify.toml`.
