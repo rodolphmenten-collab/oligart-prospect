@@ -30,7 +30,7 @@
 const ROLE_TARGETS = {
   annonceur: {
     target: /marketing|digital|m[ée]dia\b|media\b|communication|brand|acquisition|growth|publicit|advertis/i,
-    exclude: /\bceo\b|chief executive|founder|fondateur|pr[ée]sident|head of sales|sales director|directeur commercial|vp sales|account executive/i,
+    exclude: /\bceo\b|chief executive|founder|fondateur|pr[ée]sident|head of sales|sales director|directeur commercial|vp sales|account executive|corporate communications?|communication corporate|public relations|relations publiques|relations presse|corporate affairs|\bpr\b/i,
     queryTerms: "directeur marketing responsable marketing head of digital directeur communication"
   },
   agence: {
@@ -142,7 +142,7 @@ async function aiPickCandidates(hits, company, mode) {
     const hitsText = hits.map((h, i) => `[${i}] Titre: "${h.title}"\nURL: ${h.linkedin}\nExtrait: "${(h.content || "").slice(0, 300)}"`).join("\n\n");
     const roleInstruction = mode === "agence"
       ? 'Ont un poste de CEO, fondateur, président, directeur général, Head of Digital, Head of Sales ou Directeur Commercial (PAS un poste marketing/communication classique, PAS community manager)'
-      : 'Ont un poste lié au marketing, à la communication, au digital ou aux médias (pas CEO, pas commercial/ventes, pas un métier sans rapport comme cuisinier ou RH)';
+      : 'Ont un poste lié à l\'achat/gestion du budget media, au marketing digital, ou aux médias (PAS CEO, PAS commercial/ventes, PAS un poste de communication corporate/institutionnelle/relations publiques/relations presse -- ces postes gèrent l\'image et la presse, pas le budget media, et ne conviennent pas ; PAS un métier sans rapport comme cuisinier ou RH)';
     const targetDescription = mode === "agence"
       ? "trouver le CEO/fondateur, le Head of Digital ou le responsable commercial (Head of Sales/Directeur Commercial) de l'agence media indépendante française"
       : "trouver le décideur qui gère le budget media/marketing/digital de l'entreprise française";
@@ -180,7 +180,7 @@ exports.handler = async (event) => {
     }
     const AGENCY_CATEGORIES = ["Agences Média Indépendantes"];
     const mode = AGENCY_CATEGORIES.includes(category) ? "agence" : "annonceur";
-    const { target, queryTerms } = targetsFor(mode);
+    const { target, exclude, queryTerms } = targetsFor(mode);
 
     let candidates = await hunterDomainSearch(company, domain, mode);
     let source = "hunter";
@@ -205,7 +205,7 @@ exports.handler = async (event) => {
           // faisait passer n'importe quel poste par simple contamination du
           // nom d'entreprise (détecté en testant Head of Sales chez une
           // agence "X Media" -- passait à tort le filtre marketing/media).
-          .filter(h => h.role && target.test(h.role) && isLikelyFrance(h))
+          .filter(h => h.role && target.test(h.role) && !exclude.test(h.role) && isLikelyFrance(h))
           .map(h => ({ name: h.name, role: h.role, email: "", linkedin: h.linkedin }));
         source = "linkedin_search";
       }
@@ -232,10 +232,23 @@ exports.handler = async (event) => {
       return { name: c.name, role: c.role, email, linkedin, source };
     }
 
-    const contact1 = await finalize(candidates[0]);
-    const contact2 = candidates[1] ? await finalize(candidates[1]) : null;
+    // Jusqu'à 5 candidats renvoyés (pas seulement le meilleur) : le client
+    // peut ainsi proposer un autre contact à chaque nouveau clic sur
+    // "Trouver le contact" sans refaire d'appel serveur, jusqu'à ce que
+    // Rodolph trouve la bonne personne -- un Directeur Communication
+    // Corporate par exemple ne l'intéresse pas même si le poste matche
+    // vaguement "communication", il veut pouvoir passer au suivant.
+    // Seul le premier candidat est "finalisé" (email cherché via Hunter
+    // Email Finder + LinkedIn complété via Tavily si besoin) pour ne pas
+    // multiplier les appels API à chaque recherche -- les suivants gardent
+    // les infos déjà obtenues par la recherche initiale (nom/poste/parfois
+    // LinkedIn/parfois email si Hunter Domain Search les avait déjà).
+    const candidatesList = candidates.slice(0, 5);
+    const contact1 = await finalize(candidatesList[0]);
+    const contact2 = candidatesList[1] ? await finalize(candidatesList[1]) : null;
+    const restFinalized = candidatesList.slice(2).map(c => ({ name: c.name, role: c.role, email: c.email || "", linkedin: c.linkedin || "", source }));
 
-    return { statusCode: 200, body: JSON.stringify({ found: true, contact1, contact2 }) };
+    return { statusCode: 200, body: JSON.stringify({ found: true, contact1, contact2, candidates: [contact1, contact2, ...restFinalized].filter(Boolean) }) };
   } catch (e) {
     return { statusCode: 500, body: JSON.stringify({ error: e.message || "Erreur serveur" }) };
   }
