@@ -68,8 +68,14 @@ function extractNameFromLinkedinTitle(title) {
   const head = title.split(/\s[-|–]\s/)[0].replace(/\s*\|\s*LinkedIn.*$/i, "").trim();
   const words = head.split(/\s+/);
   if (words.length < 2 || words.length > 4) return "";
-  if (!words.every(w => /^[A-ZÀ-Ü][a-zà-ÿ'.-]+$/.test(w))) return "";
-  return head;
+  // Le nom de famille est parfois écrit tout en majuscules sur LinkedIn
+  // (convention française courante, ex. "Vincent HOUDOU") -- la regex
+  // n'acceptait avant que la casse "Titre" (Prénom Nom), ce qui rejetait
+  // silencieusement ces profils comme "pas un nom plausible". Accepte
+  // maintenant aussi la casse tout-majuscule par mot.
+  if (!words.every(w => /^[A-ZÀ-Ü][a-zà-ÿ'.-]+$/.test(w) || /^[A-ZÀ-Ü'-]{2,}$/.test(w))) return "";
+  // Reformate en Prénom Nom propre même si le nom était en majuscules.
+  return words.map(w => /^[A-ZÀ-Ü'-]{2,}$/.test(w) && w === w.toUpperCase() ? w[0] + w.slice(1).toLowerCase() : w).join(" ");
 }
 
 // Recherche directe sur LinkedIn via Tavily -- exactement ce qu'on ferait à
@@ -84,7 +90,7 @@ async function linkedinSearchViaTavily(query) {
     const r = await fetch("https://api.tavily.com/search", {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${process.env.TAVILY_API_KEY}` },
-      body: JSON.stringify({ query, max_results: 8, include_domains: ["linkedin.com"], search_depth: "advanced" })
+      body: JSON.stringify({ query, max_results: 10, include_domains: ["linkedin.com"], search_depth: "advanced" })
     });
     if (!r.ok) return [];
     const data = await r.json();
@@ -139,7 +145,7 @@ const AI_MODEL = process.env.ANTHROPIC_MODEL || "claude-sonnet-4-6";
 async function aiPickCandidates(hits, company, mode) {
   if (!process.env.ANTHROPIC_API_KEY || !hits.length) return null;
   try {
-    const hitsText = hits.map((h, i) => `[${i}] Titre: "${h.title}"\nURL: ${h.linkedin}\nExtrait: "${(h.content || "").slice(0, 300)}"`).join("\n\n");
+    const hitsText = hits.map((h, i) => `[${i}] Titre: "${h.title}"\nURL: ${h.linkedin}\nExtrait: "${(h.content || "").slice(0, 500)}"`).join("\n\n");
     const roleInstruction = mode === "agence"
       ? 'Ont un poste de CEO, fondateur, président, directeur général, Head of Digital, Head of Sales ou Directeur Commercial (PAS un poste marketing/communication classique, PAS community manager)'
       : 'Ont un poste lié à l\'achat/gestion du budget media, au marketing digital, ou aux médias (PAS CEO, PAS commercial/ventes, PAS un poste de communication corporate/institutionnelle/relations publiques/relations presse -- ces postes gèrent l\'image et la presse, pas le budget media, et ne conviennent pas ; PAS un métier sans rapport comme cuisinier ou RH)';
@@ -190,8 +196,23 @@ exports.handler = async (event) => {
       // rapport) peut ressortir en premier -- vu en conditions réelles.
       const hits = await linkedinSearchViaTavily(`${company || domain} France ${queryTerms}`);
 
+      // Vérification explicite que le nom de l'entreprise apparaît dans le
+      // contenu réel du profil (titre OU extrait de bio) -- absente avant
+      // ce correctif. Sans ça, un profil au titre LinkedIn axé sur une AUTRE
+      // société (cas réel : un dirigeant multi-casquettes dont le titre
+      // affiché est "Fondateur - Société A" alors qu'il est aussi
+      // co-fondateur de la société recherchée, mentionné seulement dans sa
+      // bio complète) pouvait être retenu ou rejeté au hasard, sans lien
+      // avec la vraie pertinence.
+      const companyWords=(company||domain||'').toLowerCase().split(/\s+/).filter(w=>w.length>2);
+      const mentionsCompany=h=>{
+       const text=`${h.title} ${h.content}`.toLowerCase();
+       return companyWords.some(w=>text.includes(w));
+      };
+
       // Priorité à la désambiguïsation IA (raisonne vraiment sur chaque
-      // résultat) ; repli sur le filtrage par mots-clés/liste de blocage
+      // résultat, y compris le contenu complet de la bio -- pas seulement
+      // le titre) ; repli sur le filtrage par mots-clés/liste de blocage
       // si pas de clé Anthropic ou si l'appel échoue.
       const aiPicked = await aiPickCandidates(hits, company || domain, mode);
       if (aiPicked && aiPicked.length) {
@@ -199,14 +220,17 @@ exports.handler = async (event) => {
         source = "linkedin_search_ai";
       } else {
         candidates = hits
-          // Test sur le POSTE extrait (h.role), pas sur le titre entier --
-          // beaucoup d'agences ont "Media" dans leur propre nom (Cho You
-          // Media, Place To Be Media...), donc tester sur le titre complet
-          // faisait passer n'importe quel poste par simple contamination du
-          // nom d'entreprise (détecté en testant Head of Sales chez une
-          // agence "X Media" -- passait à tort le filtre marketing/media).
-          .filter(h => h.role && target.test(h.role) && !exclude.test(h.role) && isLikelyFrance(h))
-          .map(h => ({ name: h.name, role: h.role, email: "", linkedin: h.linkedin }));
+          // Le "titre" indexé par un moteur de recherche peut être différent
+          // (parfois périmé) de la bio réelle affichée dans le contenu --
+          // vérifié en conditions réelles : le rôle extrait du titre ne
+          // mentionnait pas "fondateur" alors que le contenu, lui, disait
+          // clairement "Dirigeant & Fondateur". On teste donc la pertinence
+          // du poste sur le rôle ET sur le contenu, pas seulement le rôle.
+          .filter(h => {
+            const roleText = `${h.role || ""} ${h.content || ""}`;
+            return target.test(roleText) && !exclude.test(roleText) && isLikelyFrance(h) && mentionsCompany(h);
+          })
+          .map(h => ({ name: h.name, role: h.role || "(poste précis non confirmé, voir profil)", email: "", linkedin: h.linkedin }));
         source = "linkedin_search";
       }
     }
