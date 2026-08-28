@@ -107,7 +107,7 @@ function messageFor(p){
  return `Bonjour${name},\n\nJe me permets de vous contacter au sujet de la stratégie média digitale de ${p.company}.\n\nOligart accompagne les annonceurs à la fois en conseil (structuration de la stratégie média et go-to-market, priorisation des leviers) et en exécution opérationnelle sur l’achat media 360°, branding et performance sur un seul dispositif : display, vidéo, audio, CTV et DOOH pour la notoriété ; native et retargeting pour la conversion.\n\nCe qui fait la différence à l’exécution : un inventaire 100% premium et brand-safe (vérifié par des tiers indépendants type DoubleVerify/IAS), des KPIs garantis sur chaque format (CPC, CPM, reach, taux de complétion vidéo — pas de best-effort), et un ciblage data précis (400+ segments, sans cookies tiers, conforme RGPD).\n\nLe tout géré en direct, avec des honoraires transparents et un format plus flexible qu’une agence traditionnelle.\n\nJe serais ravi d’échanger 20 minutes pour voir comment structurer et optimiser votre stratégie média actuelle.\n\nMon site : https://oligart-agency.com\n\nBien à vous,\nRodolph Menten`;
 }
 function openProspect(id){selected=prospects.find(p=>p.id===id);if(!selected)return;const p=selected;$('#drawerBody').innerHTML=`<p class="eyebrow">${esc(p.priority)} · SCORE ${p.score}</p><h1>${esc(p.company)}</h1><p class="muted">${esc(p.sector)} · ${esc(p.country)} · ${esc(p.size)}</p><div class="actions"><a class="btn secondary" target="_blank" href="${esc(p.website)}">Site / recherche</a><a class="btn secondary" target="_blank" href="${esc(p.companyLinkedin)}">LinkedIn entreprise</a></div><div class="detail-grid"><label>Statut<select id="dStatus">${STATUSES.map(s=>`<option ${s===p.status?'selected':''}>${s}</option>`).join('')}</select></label><label>Priorité<select id="dPriority">${['A','B','C'].map(s=>`<option ${s===p.priority?'selected':''}>${s}</option>`).join('')}</select></label><label>Prochaine relance<input id="dNext" type="date" value="${esc(p.nextFollowUp)}"></label><label class="wide">Relance rapide<div class="actions" style="margin-top:4px"><button type="button" class="btn secondary" data-followup="3">+3 jours</button><button type="button" class="btn secondary" data-followup="5">+5 jours</button><button type="button" class="btn secondary" data-followup="7">+7 jours</button></div></label><label class="wide">Domaine du site (optionnel, améliore la recherche du contact)<input id="dDomain" placeholder="ex: carglass.fr"></label></div>
- <div class="actions"><button id="findMarketingContact" class="btn secondary">🎯 Trouver le contact marketing / digital</button><button id="enrichLead" class="btn secondary">🏢 Enrichir l'entreprise (effectif, secteur...)</button></div>
+ <div class="actions"><button id="findMarketingContact" class="btn secondary">🎯 Trouver le contact marketing / digital (reclique pour un autre)</button><button id="enrichLead" class="btn secondary">🏢 Enrichir l'entreprise (effectif, secteur...)</button></div>
  <p class="muted" id="findContactStatus"></p><div id="enrichResult"></div>
  <div class="detail-grid" style="margin-top:14px"><label class="wide"><b>Contact 1 (décideur média/marketing)</b></label><label>Nom<input id="dName" value="${esc(p.contactName)}" placeholder="Prénom Nom"></label><label>Fonction<input id="dRole" value="${esc(p.targetRole)}" placeholder="Directeur Marketing, Head of Digital..."></label><label>Email<input id="dEmail" type="email" value="${esc(p.contactEmail)}"></label><label>LinkedIn<input id="dLinkedin" value="${esc(p.contactLinkedin)}" placeholder="https://linkedin.com/in/..."></label></div>
  <div class="actions"><button data-contact-action="linkedin-add" data-slot="1" class="btn secondary">🔗 Ajouter sur LinkedIn</button><button data-contact-action="email" data-slot="1" class="btn secondary">✉️ Envoyer un email</button><button data-contact-action="linkedin-dm" data-slot="1" class="btn secondary">💬 DM LinkedIn</button></div>
@@ -126,26 +126,38 @@ function openProspect(id){selected=prospects.find(p=>p.id===id);if(!selected)ret
   $('#dNext').value=d.toISOString().slice(0,10);
  });
  $('#saveDetail').onclick=()=>{Object.assign(p,{status:$('#dStatus').value,priority:$('#dPriority').value,contactName:$('#dName').value,targetRole:$('#dRole').value,contactEmail:$('#dEmail').value,contactLinkedin:$('#dLinkedin').value,contact2Name:$('#dName2').value,contact2Role:$('#dRole2').value,contact2Email:$('#dEmail2').value,contact2Linkedin:$('#dLinkedin2').value,nextFollowUp:$('#dNext').value,why:$('#dWhy').value,notes:$('#dNotes').value});save();toast('Fiche enregistrée')};
- // Recherche du décideur média/marketing/digital via Hunter.io Domain Search
- // (liste les personnes connues sur le domaine avec leur poste, filtré sur
- // marketing/digital/media -- jamais CEO ni Head of Sales). Ne remplit que
- // les champs vides, n'écrase jamais un contact déjà renseigné à la main.
+ // Recherche du décideur média/marketing/digital. Le premier clic interroge
+ // le serveur et met en cache la liste de candidats trouvés (jusqu'à 5) ;
+ // les clics suivants font défiler cette liste localement -- sans nouvel
+ // appel serveur -- jusqu'à ce que Rodolph trouve le bon contact (ex. un
+ // Directeur Communication Corporate ne convient pas même s'il matche
+ // vaguement "communication", il doit pouvoir passer au suivant). Contrairement
+ // aux autres outils d'enrichissement, ce bouton ÉCRASE volontairement le
+ // Contact 1 à chaque clic -- c'est tout l'intérêt du cycle demandé.
+ let contactCycle=null;
  $('#findMarketingContact').onclick=async()=>{
   const status=$('#findContactStatus');
-  status.textContent='Recherche du contact marketing/digital en cours...';
-  try{
-   const r=await fetch('/.netlify/functions/find-marketing-contacts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({company:p.company,domain:$('#dDomain').value.trim(),category:p.category})});
-   const data=await r.json();
-   if(!r.ok)throw new Error(data.error||'Recherche indisponible');
-   if(!data.found){status.textContent=`Aucun contact marketing/digital trouvé automatiquement (${data.reason||'raison inconnue'}) -- à chercher manuellement.`;return}
-   let filled=[];
-   if(!$('#dName').value&&data.contact1){$('#dName').value=data.contact1.name;$('#dRole').value=data.contact1.role;$('#dEmail').value=data.contact1.email;$('#dLinkedin').value=data.contact1.linkedin;filled.push(`Contact 1 : ${data.contact1.name} (${data.contact1.role})`)}
-   if(!$('#dName2').value&&data.contact2){$('#dName2').value=data.contact2.name;$('#dRole2').value=data.contact2.role;$('#dEmail2').value=data.contact2.email;$('#dLinkedin2').value=data.contact2.linkedin;filled.push(`Contact 2 : ${data.contact2.name} (${data.contact2.role})`)}
-   status.textContent=filled.length?`Trouvé -- ${filled.join(' | ')}. Pense à cliquer Enregistrer.`:'Contact(s) déjà renseigné(s), rien écrasé.';
-   toast('Contact(s) trouvé(s)');
-  }catch(e){
-   status.textContent=`Recherche indisponible (${e.message}). Tu peux chercher manuellement.`;
+  if(!contactCycle){
+   status.textContent='Recherche du contact marketing/digital en cours...';
+   try{
+    const r=await fetch('/.netlify/functions/find-marketing-contacts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({company:p.company,domain:$('#dDomain').value.trim(),category:p.category})});
+    const data=await r.json();
+    if(!r.ok)throw new Error(data.error||'Recherche indisponible');
+    if(!data.found||!data.candidates?.length){status.textContent=`Aucun contact marketing/digital trouvé automatiquement (${data.reason||'raison inconnue'}) -- à chercher manuellement.`;return}
+    contactCycle={list:data.candidates,index:0};
+    if(data.contact2&&!$('#dName2').value){$('#dName2').value=data.contact2.name;$('#dRole2').value=data.contact2.role;$('#dEmail2').value=data.contact2.email;$('#dLinkedin2').value=data.contact2.linkedin}
+   }catch(e){
+    status.textContent=`Recherche indisponible (${e.message}). Tu peux chercher manuellement.`;
+    return;
+   }
+  }else{
+   contactCycle.index=(contactCycle.index+1)%contactCycle.list.length;
   }
+  const c=contactCycle.list[contactCycle.index];
+  $('#dName').value=c.name;$('#dRole').value=c.role;$('#dEmail').value=c.email||'';$('#dLinkedin').value=c.linkedin||'';
+  const looped=contactCycle.index===0&&contactCycle.list.length>1;
+  status.textContent=`Candidat ${contactCycle.index+1}/${contactCycle.list.length} : ${c.name} (${c.role}). ${looped?'Retour au premier candidat -- ':''}Pas le bon ? Reclique pour voir le suivant. Pense à cliquer Enregistrer.`;
+  toast(`Contact ${contactCycle.index+1}/${contactCycle.list.length}`);
  };
  // Enrichissement gratuit (API officielle Recherche d'Entreprises, INSEE/RNE)
  // -- données sur l'entreprise elle-même (effectif, secteur, siège), pas sur
