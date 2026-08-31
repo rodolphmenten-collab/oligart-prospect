@@ -230,15 +230,14 @@ deux n'est requis pour l'autre.
   entreprise — liste éditable dans `career-companies.json`), **France
   Travail** (API officielle OAuth2, 300k+ offres, inscription gratuite sur
   francetravail.io — `FRANCETRAVAIL_CLIENT_ID`/`FRANCETRAVAIL_CLIENT_SECRET`,
-  scan ignoré proprement si absentes), **LinkedIn** (endpoint invité public
-  documenté, lecture seule, sans login ni cookie — peut se faire bloquer par
-  LinkedIn après quelques requêtes, traité comme "indisponible" sans casser
-  le reste du scan). APEC et Welcome to the Jungle ne sont **pas**
-  implémentés en connecteur direct : ce sont des SPA React/Angular qui ne
-  renvoient aucune donnée exploitable en simple requête HTTP (contrairement
-  à Greenhouse/Lever/France Travail qui exposent une vraie API), et les
-  contourner proprement demanderait soit un service tiers payant, soit une
-  rétro-ingénierie fragile de leur API interne nécessitant vérification.
+  scan ignoré proprement si absentes), **LinkedIn** (deux méthodes en
+  parallèle : endpoint invité public direct, et recherche via Tavily —
+  plus robuste, contourne les limites anti-scraping de la première),
+  **APEC** (via Tavily également : apec.fr est une SPA React qui ne renvoie
+  aucune donnée en requête HTTP simple, contourné en recherchant les pages
+  d'offres déjà indexées par Tavily plutôt qu'en interrogeant la recherche
+  interne cassée du site), **Welcome to the Jungle** (clé Algolia publique
+  du site, conçue par Algolia pour être exposée côté client).
 - **Scoring 100% local** (`career-scoring.js`) : barème JS exact (titre,
   secteur, responsabilités détectées par mots-clés, séniorité, localisation,
   malus junior/stage/SDR), aucun appel réseau, aucune IA.

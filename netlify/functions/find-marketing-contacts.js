@@ -63,14 +63,19 @@ async function hunterDomainSearch(company, domain, mode) {
   } catch { return []; }
 }
 
-// Recherche directe sur LinkedIn via Tavily -- exactement ce qu'on ferait à
-// la main ("Hippopotamus directeur marketing" sur LinkedIn/Google). Le titre
-// d'une page LinkedIn a le format "Prénom Nom - Poste - Entreprise | LinkedIn"
-// ou "Prénom Nom | LinkedIn" : on extrait le nom (avant le premier " - " ou
-// " | "), jamais inventé si le format ne matche pas un nom plausible.
-function extractNameFromLinkedinTitle(title) {
+// Recherche directe sur LinkedIn ET TheOrg.com via Tavily -- exactement ce
+// qu'on ferait à la main ("Jacadi directeur marketing" sur Google/LinkedIn).
+// TheOrg.com est un annuaire d'organigrammes d'entreprises avec des fiches
+// souvent plus fiables/à jour que le méta-titre indexé d'un profil LinkedIn
+// (repéré en marge d'une recherche manuelle : "Claire Prost - Directrice
+// Marketing, Communication Et Partenariats - Membre Du Comex at Jacadi |
+// The Org" -- une source qu'on n'interrogeait pas du tout avant). Le titre
+// d'une page a le format "Prénom Nom - Poste - Entreprise | Source" : on
+// extrait le nom (avant le premier " - " ou " | "), jamais inventé si le
+// format ne matche pas un nom plausible.
+function extractNameFromTitle(title) {
   if (!title) return "";
-  const head = title.split(/\s[-|–]\s/)[0].replace(/\s*\|\s*LinkedIn.*$/i, "").trim();
+  const head = title.split(/\s[-|–]\s/)[0].replace(/\s*\|\s*(LinkedIn|The Org).*$/i, "").trim();
   const words = head.split(/\s+/);
   if (words.length < 2 || words.length > 4) return "";
   // Le nom de famille est parfois écrit tout en majuscules sur LinkedIn
@@ -83,29 +88,28 @@ function extractNameFromLinkedinTitle(title) {
   return words.map(w => /^[A-ZÀ-Ü'-]{2,}$/.test(w) && w === w.toUpperCase() ? w[0] + w.slice(1).toLowerCase() : w).join(" ");
 }
 
-// Recherche directe sur LinkedIn via Tavily -- exactement ce qu'on ferait à
-// la main ("Hippopotamus directeur marketing" sur Google/LinkedIn). Tavily
-// est un moteur en LANGAGE NATUREL, pas Google : il ne comprend pas "site:",
-// les guillemets d'expression exacte ni "OR" comme opérateurs (vérifié --
-// une première version utilisant cette syntaxe ne renvoyait rien, corrigé).
-// La restriction de domaine passe uniquement par le paramètre include_domains.
 async function linkedinSearchViaTavily(query) {
   if (!process.env.TAVILY_API_KEY) return [];
   try {
     const r = await fetch("https://api.tavily.com/search", {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${process.env.TAVILY_API_KEY}` },
-      body: JSON.stringify({ query, max_results: 10, include_domains: ["linkedin.com"], search_depth: "advanced" })
+      body: JSON.stringify({ query, max_results: 10, include_domains: ["linkedin.com", "theorg.com"], search_depth: "advanced" })
     });
     if (!r.ok) return [];
     const data = await r.json();
     const out = [];
     for (const hit of data.results || []) {
-      if (!/linkedin\.com\/in\//.test(hit.url)) continue;
-      const name = extractNameFromLinkedinTitle(hit.title);
+      const isLinkedin = /linkedin\.com\/in\//.test(hit.url);
+      const isTheOrg = /theorg\.com\//.test(hit.url);
+      if (!isLinkedin && !isTheOrg) continue;
+      const name = extractNameFromTitle(hit.title);
       if (!name) continue; // titre pas au format attendu -- on n'invente pas un nom
       const roleMatch = (hit.title.match(/-\s*([^-|]+?)\s*-\s*[^-|]+\|/) || [])[1];
-      out.push({ name, role: roleMatch || "", title: hit.title, content: hit.content || "", linkedin: hit.url });
+      // TheOrg ne donne pas directement l'URL LinkedIn de la personne --
+      // laissé vide ici, complété plus tard via finalize() (recherche
+      // ciblée "Nom Entreprise LinkedIn").
+      out.push({ name, role: roleMatch || "", title: hit.title, content: hit.content || "", linkedin: isLinkedin ? hit.url : "" });
     }
     return out;
   } catch { return []; }
