@@ -107,23 +107,50 @@ function renderFreeJobs(){
  el.querySelectorAll('[data-status-fp]').forEach(sel=>sel.onchange=()=>updateFreeJobStatus(sel.dataset.statusFp,sel.value));
 }
 
+async function pollFreeCareerScan(attempt){
+ const statusEl=document.querySelector('#careerFreeStatus');
+ const btn=document.querySelector('#careerFreeRefresh');
+ if(attempt>25){ // ~100s max
+  if(statusEl)statusEl.textContent='Le scan met plus de temps que prévu à répondre. Il continue en arrière-plan -- reviens vérifier dans une minute.';
+  if(btn)btn.disabled=false;
+  return;
+ }
+ try{
+  const r=await fetch('/.netlify/functions/career-free-scan-status');
+  const data=await r.json();
+  if(data.state==='done'){
+   if(data.error){
+    if(statusEl)statusEl.textContent=`Scan indisponible (${data.error}).`;
+   }else{
+    const result=data.result||{};
+    const okList=(result.sitesOk||[]).length;
+    const failList=(result.sitesFailed||[]).length;
+    // renderFreeJobs() (appelé par fetchFreeJobs) réécrit ce champ avec un
+    // message générique -- le nôtre, plus précis, doit passer APRÈS pour ne
+    // pas être écrasé immédiatement.
+    await fetchFreeJobs();
+    if(statusEl)statusEl.textContent=`Scan terminé : ${result.added} nouvelle(s) offre(s), ${result.updated} mise(s) à jour. ${okList} source(s) OK${failList?`, ${failList} en échec (voir career-companies.json ou clés API)`:''}.`;
+    if(window.Oligart)window.Oligart.toast('Scan carrière terminé');
+   }
+   if(btn)btn.disabled=false;
+   return;
+  }
+ }catch{/* on retente simplement au prochain intervalle */}
+ setTimeout(()=>pollFreeCareerScan(attempt+1),4000);
+}
+
 async function refreshFreeJobs(){
  const btn=document.querySelector('#careerFreeRefresh');
  const statusEl=document.querySelector('#careerFreeStatus');
  if(btn)btn.disabled=true;
- if(statusEl)statusEl.textContent='Scan en cours (Greenhouse + Lever, gratuit, sans IA)...';
+ if(statusEl)statusEl.textContent='Scan lancé (Greenhouse, Lever, France Travail, LinkedIn, WTTJ, APEC)... suivi en cours, ça peut prendre 30 à 90 secondes.';
  try{
   const r=await fetch('/.netlify/functions/career-free-trigger',{method:'POST'});
   const data=await r.json().catch(()=>({}));
   if(!r.ok)throw new Error(data.error||`Scan indisponible (code ${r.status})`);
-  const okList=(data.sitesOk||[]).length;
-  const failList=(data.sitesFailed||[]).length;
-  if(statusEl)statusEl.textContent=`Scan terminé : ${data.added} nouvelle(s) offre(s), ${data.updated} mise(s) à jour. ${okList} source(s) OK${failList?`, ${failList} en échec (slug à vérifier dans career-companies.json)`:''}.`;
-  await fetchFreeJobs();
-  if(window.Oligart)window.Oligart.toast('Scan carrière terminé');
+  pollFreeCareerScan(0);
  }catch(e){
   if(statusEl)statusEl.textContent=`Scan indisponible (${e.message}).`;
- }finally{
   if(btn)btn.disabled=false;
  }
 }
