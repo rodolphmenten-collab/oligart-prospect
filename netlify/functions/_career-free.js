@@ -78,6 +78,8 @@ async function runFreeCareerScan(deps) {
   const { fetchFranceTravail } = require("./_career-francetravail.js");
   const { fetchLinkedIn } = require("./_career-linkedin.js");
   const { fetchWTTJ } = require("./_career-wttj.js");
+  const { fetchApecViaTavily } = require("./_career-apec-tavily.js");
+  const { fetchLinkedinJobsViaTavily } = require("./_career-linkedin-tavily.js");
 
   const results = await Promise.allSettled(
     companies.map(c => (c.ats === "lever" ? fetchLever(c, fetchImpl) : fetchGreenhouse(c, fetchImpl)))
@@ -95,12 +97,15 @@ async function runFreeCareerScan(deps) {
     }
   });
 
-  // France Travail, LinkedIn et WTTJ sont des sources transversales (pas par
-  // entreprise) -- statut ajouté séparément, jamais bloquant pour le reste.
-  const [ftResult, liResult, wttjResult] = await Promise.allSettled([
+  // France Travail, LinkedIn (scraping direct + via Tavily), WTTJ et APEC
+  // (via Tavily) sont des sources transversales (pas par entreprise) --
+  // statut ajouté séparément, jamais bloquant pour le reste.
+  const [ftResult, liResult, wttjResult, apecResult, liTavilyResult] = await Promise.allSettled([
     fetchFranceTravail(fetchImpl),
     fetchLinkedIn(fetchImpl),
-    fetchWTTJ(fetchImpl)
+    fetchWTTJ(fetchImpl),
+    fetchApecViaTavily(fetchImpl),
+    fetchLinkedinJobsViaTavily(fetchImpl)
   ]);
 
   if (ftResult.status === "fulfilled") {
@@ -111,10 +116,10 @@ async function runFreeCareerScan(deps) {
   }
 
   if (liResult.status === "fulfilled") {
-    if (liResult.value.blocked) sitesFailed.push({ company: "LinkedIn", reason: "Endpoint invité indisponible ou bloqué (limite anti-scraping) -- normal, non bloquant" });
-    else { sitesOk.push("LinkedIn"); allJobs.push(...liResult.value.jobs); }
+    if (liResult.value.blocked) sitesFailed.push({ company: "LinkedIn (direct)", reason: "Endpoint invité indisponible ou bloqué (limite anti-scraping) -- normal, non bloquant" });
+    else { sitesOk.push("LinkedIn (direct)"); allJobs.push(...liResult.value.jobs); }
   } else {
-    sitesFailed.push({ company: "LinkedIn", reason: liResult.reason?.message || "erreur inconnue" });
+    sitesFailed.push({ company: "LinkedIn (direct)", reason: liResult.reason?.message || "erreur inconnue" });
   }
 
   if (wttjResult.status === "fulfilled") {
@@ -122,6 +127,22 @@ async function runFreeCareerScan(deps) {
     else { sitesOk.push("Welcome to the Jungle"); allJobs.push(...wttjResult.value.jobs); }
   } else {
     sitesFailed.push({ company: "Welcome to the Jungle", reason: wttjResult.reason?.message || "erreur inconnue" });
+  }
+
+  if (apecResult.status === "fulfilled") {
+    if (apecResult.value.skipped) sitesFailed.push({ company: "APEC", reason: "TAVILY_API_KEY non configurée" });
+    else if (apecResult.value.blocked) sitesFailed.push({ company: "APEC", reason: "Aucun résultat exploitable trouvé via la recherche -- non bloquant" });
+    else { sitesOk.push("APEC"); allJobs.push(...apecResult.value.jobs); }
+  } else {
+    sitesFailed.push({ company: "APEC", reason: apecResult.reason?.message || "erreur inconnue" });
+  }
+
+  if (liTavilyResult.status === "fulfilled") {
+    if (liTavilyResult.value.skipped) sitesFailed.push({ company: "LinkedIn (via recherche)", reason: "TAVILY_API_KEY non configurée" });
+    else if (liTavilyResult.value.blocked) sitesFailed.push({ company: "LinkedIn (via recherche)", reason: "Aucun résultat exploitable trouvé -- non bloquant" });
+    else { sitesOk.push("LinkedIn (via recherche)"); allJobs.push(...liTavilyResult.value.jobs); }
+  } else {
+    sitesFailed.push({ company: "LinkedIn (via recherche)", reason: liTavilyResult.reason?.message || "erreur inconnue" });
   }
 
   const existing = (await store.get("career-jobs-free")) || [];
