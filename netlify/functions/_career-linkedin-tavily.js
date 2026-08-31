@@ -20,7 +20,9 @@
 const TARGET_QUERIES = [
   "General Manager Country Manager",
   "Directeur Commercial VP Sales",
-  "Head of Sales Directeur Général"
+  "Head of Sales Directeur Général",
+  "Chief Business Officer Chief Operating Officer",
+  "VP Partnerships Business Development"
 ];
 
 const AGO_SUFFIX_RE = /\s*\d+\s*(hours?|days?|weeks?|months?)\s*ago\s*$|\s*il y a\s*\d+\s*(heures?|jours?|semaines?|mois)\s*$/i;

@@ -15,7 +15,7 @@ const ALGOLIA_APP_ID = "CSEKHVMS53";
 const ALGOLIA_SEARCH_KEY = "4bd8f6215d0cc52b26430765769e65a0";
 const ALGOLIA_URL = `https://${ALGOLIA_APP_ID.toLowerCase()}-dsn.algolia.net/1/indexes/*/queries`;
 const INDEX = "wk_cms_jobs_production";
-const QUERIES = ["Country Manager", "VP Sales", "Directeur Commercial", "Head of Sales", "General Manager"];
+const QUERIES = ["Country Manager", "VP Sales", "Directeur Commercial", "Head of Sales", "General Manager", "Chief Business Officer COO", "VP Partnerships Business Development"];
 
 async function fetchWTTJ(fetchImpl) {
   const seen = new Set();

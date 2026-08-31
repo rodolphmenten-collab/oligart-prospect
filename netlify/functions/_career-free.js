@@ -7,7 +7,7 @@
 // de remonter des résultats.
 const { scoreJob } = require("../../career-scoring.js");
 
-const TARGET_TITLE_RE = /general manager|managing director|country manager|country director|chief revenue officer|\bcro\b|chief commercial officer|\bcco\b|vp sales|vp revenue|international business director|commercial director|directeur commercial|regional director|sales director|managing partner|head of sales|directeur g[ée]n[ée]ral/i;
+const TARGET_TITLE_RE = /general manager|managing director|country manager|country director|chief revenue officer|\bcro\b|chief commercial officer|\bcco\b|chief business officer|\bcbo\b|chief operating officer|\bcoo\b|chief growth officer|vp sales|vp revenue|vp emea|vice president.*emea|head of partnerships|vp partnerships|vp business development|head of revenue|international business director|commercial director|directeur commercial|regional director|sales director|managing partner|head of sales|directeur g[ée]n[ée]ral|d[ée]veloppement commercial/i;
 
 function normalize(str) {
   return String(str || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
