@@ -12,7 +12,9 @@
 const TARGET_QUERIES = [
   "General Manager Country Manager",
   "Directeur Commercial VP Sales",
-  "Head of Sales Directeur Général"
+  "Head of Sales Directeur Général",
+  "Chief Business Officer Chief Operating Officer",
+  "VP Partnerships Business Development"
 ];
 
 function extractCompanyFromApec(title, content) {

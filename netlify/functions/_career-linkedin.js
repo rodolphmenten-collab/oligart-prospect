@@ -12,7 +12,7 @@
 // comme une erreur qui casserait le scan global (cohérent avec le principe
 // de résilience Promise.allSettled du reste de l'app).
 const SEARCH_URL = "https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search";
-const QUERIES = ["Country Manager", "VP Sales", "Directeur Commercial", "Head of Sales"];
+const QUERIES = ["Country Manager", "VP Sales", "Directeur Commercial", "Head of Sales", "Chief Business Officer", "VP Partnerships Business Development"];
 const LOCATION = "France";
 
 function parseJobCards(html) {

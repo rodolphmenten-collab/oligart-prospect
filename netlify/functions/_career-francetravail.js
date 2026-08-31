@@ -14,7 +14,9 @@ const SCOPE = "api_offresdemploiv2 o2dsoffre";
 const QUERIES = [
   "General Manager", "Country Manager", "Directeur Général",
   "Directeur Commercial", "VP Sales", "Head of Sales",
-  "Chief Revenue Officer", "Sales Director"
+  "Chief Revenue Officer", "Sales Director",
+  "Chief Business Officer", "Chief Operating Officer",
+  "VP Partnerships", "VP Business Development", "Head of Revenue"
 ];
 
 async function getAccessToken(fetchImpl) {
