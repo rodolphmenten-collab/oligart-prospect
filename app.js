@@ -110,10 +110,8 @@ function openProspect(id){selected=prospects.find(p=>p.id===id);if(!selected)ret
  <div class="actions"><button id="findMarketingContact" class="btn secondary">🎯 Trouver le contact marketing / digital (reclique pour un autre)</button><button id="enrichLead" class="btn secondary">🏢 Enrichir l'entreprise (effectif, secteur...)</button></div>
  <p class="muted" id="findContactStatus"></p><div id="enrichResult"></div>
  <div class="detail-grid" style="margin-top:14px"><label class="wide"><b>Contact 1 (décideur média/marketing)</b></label><label>Nom<input id="dName" value="${esc(p.contactName)}" placeholder="Prénom Nom"></label><label>Fonction<input id="dRole" value="${esc(p.targetRole)}" placeholder="Directeur Marketing, Head of Digital..."></label><label>Email<input id="dEmail" type="email" value="${esc(p.contactEmail)}"></label><label>LinkedIn<input id="dLinkedin" value="${esc(p.contactLinkedin)}" placeholder="https://linkedin.com/in/..."></label></div>
- <div class="actions"><button data-contact-action="linkedin-add" data-slot="1" class="btn secondary">🔗 Ajouter sur LinkedIn</button><button data-contact-action="email" data-slot="1" class="btn secondary">✉️ Envoyer un email</button><button data-contact-action="linkedin-dm" data-slot="1" class="btn secondary">💬 DM LinkedIn</button></div>
- <div class="detail-grid" style="margin-top:14px"><label class="wide"><b>Contact 2 (optionnel, si deux décideurs identifiés)</b></label><label>Nom<input id="dName2" value="${esc(p.contact2Name||'')}" placeholder="Prénom Nom"></label><label>Fonction<input id="dRole2" value="${esc(p.contact2Role||'')}" placeholder="Directeur Media, Responsable Digital..."></label><label>Email<input id="dEmail2" type="email" value="${esc(p.contact2Email||'')}"></label><label>LinkedIn<input id="dLinkedin2" value="${esc(p.contact2Linkedin||'')}" placeholder="https://linkedin.com/in/..."></label></div>
- <div class="actions"><button data-contact-action="linkedin-add" data-slot="2" class="btn secondary">🔗 Ajouter sur LinkedIn</button><button data-contact-action="email" data-slot="2" class="btn secondary">✉️ Envoyer un email</button><button data-contact-action="linkedin-dm" data-slot="2" class="btn secondary">💬 DM LinkedIn</button></div>
- <div class="detail-grid" style="margin-top:14px"><label class="wide">Pourquoi Oligart<textarea id="dWhy">${esc(p.why)}</textarea></label><label class="wide">Notes<textarea id="dNotes">${esc(p.notes)}</textarea></label><label class="wide">Message (utilisé pour l'envoi email des deux contacts)<textarea class="message" id="dMessage">${esc(messageFor(p))}</textarea></label></div>
+ <div class="actions"><button data-contact-action="linkedin-add" class="btn secondary">🔗 Ajouter sur LinkedIn</button><button data-contact-action="email" class="btn secondary">✉️ Envoyer un email</button><button data-contact-action="linkedin-dm" class="btn secondary">💬 DM LinkedIn</button></div>
+ <div class="detail-grid" style="margin-top:14px"><label class="wide">Pourquoi Oligart<textarea id="dWhy">${esc(p.why)}</textarea></label><label class="wide">Notes<textarea id="dNotes">${esc(p.notes)}</textarea></label><label class="wide">Message (utilisé pour l'envoi email)<textarea class="message" id="dMessage">${esc(messageFor(p))}</textarea></label></div>
  <div class="actions"><button id="saveDetail" class="btn primary">Enregistrer</button><button id="copyDm" class="btn secondary">Copier le message</button></div>
  <div id="drawerExtra"></div>`;
  $('#drawer').classList.add('open');
@@ -125,7 +123,7 @@ function openProspect(id){selected=prospects.find(p=>p.id===id);if(!selected)ret
   const d=new Date();d.setDate(d.getDate()+days);
   $('#dNext').value=d.toISOString().slice(0,10);
  });
- $('#saveDetail').onclick=()=>{Object.assign(p,{status:$('#dStatus').value,priority:$('#dPriority').value,contactName:$('#dName').value,targetRole:$('#dRole').value,contactEmail:$('#dEmail').value,contactLinkedin:$('#dLinkedin').value,contact2Name:$('#dName2').value,contact2Role:$('#dRole2').value,contact2Email:$('#dEmail2').value,contact2Linkedin:$('#dLinkedin2').value,nextFollowUp:$('#dNext').value,why:$('#dWhy').value,notes:$('#dNotes').value});save();toast('Fiche enregistrée')};
+ $('#saveDetail').onclick=()=>{Object.assign(p,{status:$('#dStatus').value,priority:$('#dPriority').value,contactName:$('#dName').value,targetRole:$('#dRole').value,contactEmail:$('#dEmail').value,contactLinkedin:$('#dLinkedin').value,nextFollowUp:$('#dNext').value,why:$('#dWhy').value,notes:$('#dNotes').value});save();toast('Fiche enregistrée')};
  // Recherche du décideur média/marketing/digital. Le premier clic interroge
  // le serveur et met en cache la liste de candidats trouvés (jusqu'à 5) ;
  // les clics suivants font défiler cette liste localement -- sans nouvel
@@ -145,7 +143,6 @@ function openProspect(id){selected=prospects.find(p=>p.id===id);if(!selected)ret
     if(!r.ok)throw new Error(data.error||'Recherche indisponible');
     if(!data.found||!data.candidates?.length){status.textContent=`Aucun contact marketing/digital trouvé automatiquement (${data.reason||'raison inconnue'}) -- à chercher manuellement.`;return}
     contactCycle={list:data.candidates,index:0};
-    if(data.contact2&&!$('#dName2').value){$('#dName2').value=data.contact2.name;$('#dRole2').value=data.contact2.role;$('#dEmail2').value=data.contact2.email;$('#dLinkedin2').value=data.contact2.linkedin}
    }catch(e){
     status.textContent=`Recherche indisponible (${e.message}). Tu peux chercher manuellement.`;
     return;
@@ -181,10 +178,10 @@ function openProspect(id){selected=prospects.find(p=>p.id===id);if(!selected)ret
  // Connecter/Message se fait ensuite à la main sur la page LinkedIn. Chaque
  // clic est journalisé dans l'historique du prospect.
  $$('[data-contact-action]').forEach(btn=>btn.onclick=()=>{
-  const action=btn.dataset.contactAction, slot=btn.dataset.slot;
-  const name=$('#dName'+(slot==='2'?'2':'')).value||`Contact ${slot}`;
-  const email=$('#dEmail'+(slot==='2'?'2':'')).value;
-  const linkedin=$('#dLinkedin'+(slot==='2'?'2':'')).value;
+  const action=btn.dataset.contactAction;
+  const name=$('#dName').value||'ce contact';
+  const email=$('#dEmail').value;
+  const linkedin=$('#dLinkedin').value;
   if(action==='email'){
    if(!email)return toast('Ajoute un email pour ce contact');
    $('#emailModalTitle').textContent=`Email — ${name} (${p.company})`;
