@@ -93,17 +93,33 @@ function renderFreeJobs(){
  const statusEl=document.querySelector('#careerFreeStatus');
  if(!el)return;
  if(statusEl)statusEl.textContent=freeJobsLastRun?`Dernier scan : ${freeJobsLastRun}`:'Aucun scan effectué pour l\'instant.';
- const visible=freeJobs.filter(j=>(j.score||0)>=60 && j.status!=='archived' && j.status!=='rejected').sort((a,b)=>(b.score||0)-(a.score||0)||(b.publishedAt||'').localeCompare(a.publishedAt||''));
- if(!visible.length){
-  el.innerHTML='<p class="muted">Aucune offre à score ≥60 pour l\'instant. Clique "Actualiser les offres" pour lancer un scan (gratuit, Greenhouse + Lever, sans IA).</p>';
+ const active=freeJobs.filter(j=>j.status!=='archived' && j.status!=='rejected');
+ const visible=active.filter(j=>(j.score||0)>=60).sort((a,b)=>(b.score||0)-(a.score||0)||(b.publishedAt||'').localeCompare(a.publishedAt||''));
+ // Offres score 30-59 : souvent des sources avec peu de texte exploitable
+ // (APEC/LinkedIn/WTTJ renvoient un extrait court, contrairement à
+ // Greenhouse/Lever qui donnent la description complète) -- le titre seul
+ // peut déjà valoir 40/40 points sans qu'aucun autre critère ne soit
+ // détectable, ce qui les fait passer sous le seuil de 60 alors que le
+ // poste peut être pertinent. Masquées par défaut, mais jamais perdues :
+ // un repli permet de les voir plutôt que le silence total d'avant.
+ const lowerScore=active.filter(j=>(j.score||0)>=30 && (j.score||0)<60).sort((a,b)=>(b.score||0)-(a.score||0));
+ if(!visible.length && !lowerScore.length){
+  el.innerHTML='<p class="muted">Aucune offre détectée pour l\'instant. Clique "Actualiser les offres" pour lancer un scan (gratuit, sans IA).</p>';
   return;
  }
  const groups=[['excellent','excellent'],['good','good'],['watch','watch']];
- el.innerHTML=groups.map(([tier])=>{
+ let html=groups.map(([tier])=>{
   const items=visible.filter(j=>j.tier===tier);
   if(!items.length)return '';
   return `<p class="muted" style="margin:14px 0 6px"><b>${TIER_LABELS[tier]}</b> (${items.length})</p>${items.map(freeJobRow).join('')}`;
  }).join('');
+ if(!visible.length){
+  html+='<p class="muted">Aucune offre à score ≥60 dans ce scan.</p>';
+ }
+ if(lowerScore.length){
+  html+=`<details style="margin-top:18px"><summary class="muted" style="cursor:pointer"><b>Score modéré, souvent données limitées</b> (${lowerScore.length}) -- titre pertinent mais peu de contexte disponible (APEC/LinkedIn/WTTJ donnent un extrait court, pas la description complète)</summary>${lowerScore.map(freeJobRow).join('')}</details>`;
+ }
+ el.innerHTML=html;
  el.querySelectorAll('[data-status-fp]').forEach(sel=>sel.onchange=()=>updateFreeJobStatus(sel.dataset.statusFp,sel.value));
 }
 
@@ -129,7 +145,7 @@ async function pollFreeCareerScan(attempt){
     // message générique -- le nôtre, plus précis, doit passer APRÈS pour ne
     // pas être écrasé immédiatement.
     await fetchFreeJobs();
-    if(statusEl)statusEl.textContent=`Scan terminé : ${result.added} nouvelle(s) offre(s), ${result.updated} mise(s) à jour. ${okList} source(s) OK${failList?`, ${failList} en échec (voir career-companies.json ou clés API)`:''}.`;
+    if(statusEl)statusEl.textContent=`Scan terminé : ${result.added} nouvelle(s) offre(s), ${result.updated} mise(s) à jour. ${okList} source(s) OK${failList?`, ${failList} indisponible(s) (normal -- pas d'offre correspondante ou clé optionnelle absente)`:''}.`;
     if(window.Oligart)window.Oligart.toast('Scan carrière terminé');
    }
    if(btn)btn.disabled=false;
