@@ -14,11 +14,23 @@ const KINDS=[
  {id:'meeting_recap',label:'Compte rendu'}
 ];
 
+const AGENCY_CATEGORIES=['Agences Média Indépendantes'];
+
 function localFallback(kind,p,rawNotes){
+ const isAgency=AGENCY_CATEGORIES.includes(p.category);
+ const name=p.contactName;
  switch(kind){
   case 'email': return window.Oligart.messageFor(p);
-  case 'linkedin_dm': return `Bonjour${p.ceoName?` ${p.ceoName}`:''}, je suis Rodolph Menten (Oligart). ${p.company} m'intéresse beaucoup${p.sector?` sur le secteur ${p.sector}`:''}. J'accompagne des annonceurs en conseil sur leur stratégie média et en exécution 360° (branding + performance), avec un inventaire premium brand-safe et des KPIs garantis (CPC, CPM, reach) — seriez-vous ouvert à un échange rapide ?`;
-  case 'pitch': return `Chez Oligart, j'accompagne des annonceurs comme ${p.company} à la fois en conseil (structuration de la stratégie média et go-to-market) et en exécution sur l'achat media 360° — branding (display, vidéo, audio, CTV, DOOH) et performance (native, retargeting) sur un seul dispositif, avec un inventaire premium brand-safe et des KPIs garantis, pas de best-effort. ${p.why||'Le contexte actuel de votre marché'} rend ce moment particulièrement pertinent pour structurer et optimiser vos investissements média. Le tout géré en direct, avec des honoraires transparents.`;
+  case 'linkedin_dm':
+   if(isAgency){
+    return `Bonjour${name?` ${name}`:''}, je suis Rodolph Menten, fondateur d'Oligart. J'accompagne les agences media indépendantes comme ${p.company} en freelance/conseil sur le business development et le management commercial, avec un accès à de meilleures conditions d'achat media via une plateforme AdTech. Ouvert à un échange rapide ?`;
+   }
+   return `Bonjour${name?` ${name}`:''}, je suis Rodolph Menten, fondateur d'Oligart. J'accompagne des annonceurs comme ${p.company} en conseil sur leur stratégie média et en exécution 360° (branding + performance) : inventaire premium brand-safe, KPIs garantis (CPC, CPM, reach) — pas de best-effort, honoraires transparents. Ouvert à un échange rapide ?`;
+  case 'pitch':
+   if(isAgency){
+    return `Chez Oligart, j'accompagne les agences media indépendantes comme ${p.company} en freelance/conseil sur le business development et le management commercial. Deux points concrets : un accès direct à de meilleures conditions d'achat media via une plateforme AdTech, et 15 ans d'expérience en direction commerciale dans l'AdTech, le SaaS et les médias. ${p.why||'Le contexte actuel'} rend ce moment pertinent pour renforcer votre commercial sans l'engagement d'un CDI à temps plein.`;
+   }
+   return `Chez Oligart, j'accompagne des annonceurs comme ${p.company} à la fois en conseil (structuration de la stratégie média et go-to-market) et en exécution sur l'achat media 360° — branding (display, vidéo, audio, CTV, DOOH) et performance (native, retargeting) sur un seul dispositif, avec un inventaire premium brand-safe et des KPIs garantis, pas de best-effort. ${p.why||'Le contexte actuel de votre marché'} rend ce moment particulièrement pertinent pour structurer et optimiser vos investissements média. Le tout géré en direct, avec des honoraires transparents.`;
   case 'meeting_prep': return `Questions à poser :\n- Comment ${p.company} gère-t-elle aujourd'hui sa stratégie média et ses achats (en direct, via agence, ou pas de structuration formelle) ?\n- Quels leviers digitaux sont activés (display, social, vidéo, DOOH, audio, programmatique) ?\n- Qui décide côté ${p.company} sur ce type de sujet ?\n\nPoints de valeur Oligart :\n- Conseil sur la stratégie média/go-to-market + exécution opérationnelle, un seul interlocuteur\n- Inventaire premium brand-safe (vérifié par des tiers indépendants type DoubleVerify/IAS), KPIs garantis sur chaque format\n- Couverture 360° branding + performance, en direct, honoraires transparents\n\nObjection probable : \"On a déjà une agence / un budget verrouillé.\"\nRéponse : proposer un audit rapide du dispositif actuel pour identifier les économies possibles, sans engagement.`;
   case 'meeting_recap': return `Compte rendu (généré localement, à relire) :\n\n${rawNotes||'Aucune note fournie.'}`;
   default: return '';
