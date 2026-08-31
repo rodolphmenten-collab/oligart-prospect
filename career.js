@@ -65,15 +65,36 @@ async function fetchFreeJobs(){
  renderFreeJobs();
 }
 
+function formatPublished(iso){
+ if(!iso)return null;
+ const d=new Date(iso);
+ if(isNaN(d))return null;
+ const days=Math.floor((Date.now()-d.getTime())/86400000);
+ if(days<1)return 'aujourd\'hui';
+ if(days===1)return 'hier';
+ if(days<7)return `il y a ${days}j`;
+ if(days<30)return `il y a ${Math.floor(days/7)}sem`;
+ return d.toLocaleDateString('fr-FR');
+}
+
 function freeJobRow(j){
  const tierBadge=j.tier?`<span class="pill">${esc(TIER_LABELS[j.tier]||j.tier)}</span>`:'';
  const reasons=(j.scoreReasons||[]).slice(0,6).map(esc).join(' · ');
- return `<div class="row row-5" data-fp="${esc(j.fingerprint)}">
-  <b><a href="${esc(j.applyUrl||j.sourceUrl)}" target="_blank" rel="noopener">${esc(j.title)} ↗</a><br><span class="muted">${esc(j.company)} · ${esc(j.location||'lieu non précisé')}</span></b>
-  <span>${j.score}/100</span>
-  ${tierBadge}
-  <span class="muted" title="${reasons}">${reasons.slice(0,60)}${reasons.length>60?'…':''}</span>
-  <select data-status-fp="${esc(j.fingerprint)}">${Object.entries(FREE_STATUS_LABELS).map(([v,l])=>`<option value="${v}" ${j.status===v?'selected':''}>${l}</option>`).join('')}</select>
+ const published=formatPublished(j.publishedAt);
+ const metaParts=[esc(j.company),esc(j.location||'lieu non précisé')];
+ if(published)metaParts.push(published);
+ if(j.salary)metaParts.push(`<span class="salary">${esc(j.salary)}</span>`);
+ return `<div class="job-card" data-fp="${esc(j.fingerprint)}">
+  <div class="job-card-head">
+   <a class="job-card-title" href="${esc(j.applyUrl||j.sourceUrl)}" target="_blank" rel="noopener">${esc(j.title)} ↗</a>
+   <div class="job-card-badges">${tierBadge}<span class="job-card-score">${j.score}/100</span></div>
+  </div>
+  <div class="job-card-meta">${metaParts.join(' · ')}</div>
+  ${reasons?`<div class="job-card-reasons" title="${reasons}">${esc(reasons.slice(0,90))}${reasons.length>90?'…':''}</div>`:''}
+  <div class="job-card-foot">
+   <span class="muted">${esc(j.source||'')}</span>
+   <select data-status-fp="${esc(j.fingerprint)}">${Object.entries(FREE_STATUS_LABELS).map(([v,l])=>`<option value="${v}" ${j.status===v?'selected':''}>${l}</option>`).join('')}</select>
+  </div>
  </div>`;
 }
 
@@ -88,13 +109,18 @@ async function updateFreeJobStatus(fingerprint,status){
  }
 }
 
+let freeJobsSortMode='score'; // 'score' ou 'date' -- persiste tant que la page reste ouverte
+
 function renderFreeJobs(){
  const el=document.querySelector('#careerFreeJobs');
  const statusEl=document.querySelector('#careerFreeStatus');
  if(!el)return;
  if(statusEl)statusEl.textContent=freeJobsLastRun?`Dernier scan : ${freeJobsLastRun}`:'Aucun scan effectué pour l\'instant.';
  const active=freeJobs.filter(j=>j.status!=='archived' && j.status!=='rejected');
- const visible=active.filter(j=>(j.score||0)>=60).sort((a,b)=>(b.score||0)-(a.score||0)||(b.publishedAt||'').localeCompare(a.publishedAt||''));
+ const byDate=(a,b)=>(b.publishedAt||'').localeCompare(a.publishedAt||'');
+ const byScore=(a,b)=>(b.score||0)-(a.score||0)||byDate(a,b);
+ const sorter=freeJobsSortMode==='date'?byDate:byScore;
+ const visible=active.filter(j=>(j.score||0)>=60).sort(sorter);
  // Offres score 30-59 : souvent des sources avec peu de texte exploitable
  // (APEC/LinkedIn/WTTJ renvoient un extrait court, contrairement à
  // Greenhouse/Lever qui donnent la description complète) -- le titre seul
@@ -102,25 +128,33 @@ function renderFreeJobs(){
  // détectable, ce qui les fait passer sous le seuil de 60 alors que le
  // poste peut être pertinent. Masquées par défaut, mais jamais perdues :
  // un repli permet de les voir plutôt que le silence total d'avant.
- const lowerScore=active.filter(j=>(j.score||0)>=30 && (j.score||0)<60).sort((a,b)=>(b.score||0)-(a.score||0));
+ const lowerScore=active.filter(j=>(j.score||0)>=30 && (j.score||0)<60).sort(sorter);
  if(!visible.length && !lowerScore.length){
   el.innerHTML='<p class="muted">Aucune offre détectée pour l\'instant. Clique "Actualiser les offres" pour lancer un scan (gratuit, sans IA).</p>';
   return;
  }
- const groups=[['excellent','excellent'],['good','good'],['watch','watch']];
- let html=groups.map(([tier])=>{
-  const items=visible.filter(j=>j.tier===tier);
-  if(!items.length)return '';
-  return `<p class="muted" style="margin:14px 0 6px"><b>${TIER_LABELS[tier]}</b> (${items.length})</p>${items.map(freeJobRow).join('')}`;
- }).join('');
- if(!visible.length){
-  html+='<p class="muted">Aucune offre à score ≥60 dans ce scan.</p>';
+ const sortToggle=`<div class="sort-toggle"><button data-sort="score" class="${freeJobsSortMode==='score'?'active':''}">Par score</button><button data-sort="date" class="${freeJobsSortMode==='date'?'active':''}">Par date de publication</button></div>`;
+ let html=sortToggle;
+ if(freeJobsSortMode==='date'){
+  // Tri par date : liste plate, les paliers de score n'ont plus de sens
+  // visuel une fois l'ordre chronologique choisi.
+  html+=visible.map(freeJobRow).join('');
+  if(!visible.length)html+='<p class="muted">Aucune offre à score ≥60 dans ce scan.</p>';
+ }else{
+  const groups=[['excellent','excellent'],['good','good'],['watch','watch']];
+  html+=groups.map(([tier])=>{
+   const items=visible.filter(j=>j.tier===tier);
+   if(!items.length)return '';
+   return `<p class="muted" style="margin:14px 0 6px"><b>${TIER_LABELS[tier]}</b> (${items.length})</p>${items.map(freeJobRow).join('')}`;
+  }).join('');
+  if(!visible.length)html+='<p class="muted">Aucune offre à score ≥60 dans ce scan.</p>';
  }
  if(lowerScore.length){
   html+=`<details style="margin-top:18px"><summary class="muted" style="cursor:pointer"><b>Score modéré, souvent données limitées</b> (${lowerScore.length}) -- titre pertinent mais peu de contexte disponible (APEC/LinkedIn/WTTJ donnent un extrait court, pas la description complète)</summary>${lowerScore.map(freeJobRow).join('')}</details>`;
  }
  el.innerHTML=html;
  el.querySelectorAll('[data-status-fp]').forEach(sel=>sel.onchange=()=>updateFreeJobStatus(sel.dataset.statusFp,sel.value));
+ el.querySelectorAll('[data-sort]').forEach(btn=>btn.onclick=()=>{freeJobsSortMode=btn.dataset.sort;renderFreeJobs()});
 }
 
 async function pollFreeCareerScan(attempt){
