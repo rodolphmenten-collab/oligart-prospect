@@ -18,19 +18,21 @@ const PROMPTS = {
     `Contexte : ${p.why || "aucun contexte spécifique fourni"}. ` +
     `Notes internes : ${p.notes || "aucune"}. ` +
     `Pas d'objet, juste le corps de l'email.`,
-  linkedin_dm: (p) =>
-    `Rédige un message LinkedIn court (500 caractères max hors signature), en français, direct et personnalisé, ` +
-    `pour approcher ${p.targetRole || "le décideur"} de ${p.company} au sujet de sa stratégie média digitale. ` +
+  linkedin_dm: (p) => {
+    const firstName=(p.contactName||"").trim().split(/\s+/)[0]||"";
+    return `Rédige un message LinkedIn court (500 caractères max hors signature), en français, direct et personnalisé, ` +
+    `pour approcher ${firstName?`${firstName} (`:''}${p.targetRole || "le décideur"}${firstName?')':''} de ${p.company} au sujet de sa stratégie média digitale. ` +
     `Contexte : ${p.why || "aucun contexte spécifique"}. Positionnement (choisir 1-2 points marquants, pas tout) : ${OLIGART_PITCH} ` +
-    `Format attendu, en paragraphes courts séparés par des sauts de ligne (pas un bloc dense) : formule d'accueil, un paragraphe de présentation/crédibilité, un paragraphe sur l'accompagnement proposé, une question d'ouverture courte, puis "A très vite" et la signature exacte sur 3 lignes : "Rodolph Menten", "rodolph.menten@oligart.fr", "+33688354676".`,
+    `Ne mentionne PAS l'exemple Upday ni aucun employeur précédent nommément -- reste générique sur "15 ans en direction commerciale dans l'AdTech/SaaS/médias" sans ce détail. ` +
+    `Format attendu, en paragraphes courts séparés par des sauts de ligne (pas un bloc dense) : formule d'accueil${firstName?` (utilise le prénom "${firstName}")`:''}, un paragraphe de présentation/crédibilité, un paragraphe sur l'accompagnement proposé, une question d'ouverture courte, puis "A très vite" et la signature exacte sur 3 lignes : "Rodolph Menten", "rodolph.menten@oligart.fr", "+33688354676".`;
+  },
   pitch: (p) =>
     `Rédige un pitch oral de 3 phrases (pour un appel de 20 minutes), en français, expliquant ` +
     `pourquoi Oligart peut aider ${p.company} (secteur ${p.sector || "n/c"}). Positionnement : ${OLIGART_PITCH} ` +
     `Contexte : ${p.why || "aucun"}.`,
   meeting_prep: (p) =>
     `Prépare une fiche de préparation de rendez-vous (en français, format à puces courtes) pour un ` +
-    `échange avec ${p.company} (secteur ${p.sector || "n/c"}, CEO : ${p.ceoName || "inconnu"}, ` +
-    `Head of Sales : ${p.headOfSalesName || "inconnu"}). Inclure : 3 questions à poser sur leur stratégie média actuelle, 3 points de valeur ` +
+    `échange avec ${p.company} (secteur ${p.sector || "n/c"}, contact : ${p.contactName || "inconnu"}${p.targetRole?` -- ${p.targetRole}`:""}). Inclure : 3 questions à poser sur leur stratégie média actuelle, 3 points de valeur ` +
     `Oligart à mettre en avant (piocher dans : ${OLIGART_PITCH}), 1 objection probable et comment y répondre. Contexte : ${p.why || "aucun"}. Notes : ${p.notes || "aucune"}.`,
   meeting_recap: (p) =>
     `Transforme ces notes brutes de rendez-vous en compte rendu structuré (français, format à puces : ` +

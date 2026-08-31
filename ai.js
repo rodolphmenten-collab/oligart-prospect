@@ -19,13 +19,14 @@ const AGENCY_CATEGORIES=['Agences Média Indépendantes'];
 function localFallback(kind,p,rawNotes){
  const isAgency=AGENCY_CATEGORIES.includes(p.category);
  const name=p.contactName;
+ const firstName=name?name.trim().split(/\s+/)[0]:'';
  switch(kind){
   case 'email': return window.Oligart.messageFor(p);
   case 'linkedin_dm':
    if(isAgency){
-    return `Bonjour${name?` ${name}`:''}\n\nJe suis Rodolph Menten, fondateur d'Oligart — 15 ans en direction commerciale dans l'AdTech/SaaS/médias.\n\nJ'accompagne les agences media indépendantes comme ${p.company} en freelance/conseil sur le business development et le management commercial, avec un accès à de meilleures conditions d'achat media via une plateforme AdTech.\n\nOuvert à un échange rapide ?\n\nA très vite\n\nRodolph Menten\nrodolph.menten@oligart.fr\n+33688354676`;
+    return `Bonjour${firstName?` ${firstName}`:''}\n\nJe suis Rodolph Menten, fondateur d'Oligart — 15 ans en direction commerciale dans l'AdTech/SaaS/médias.\n\nJ'accompagne les agences media indépendantes comme ${p.company} en freelance/conseil sur le business development et le management commercial, avec un accès à de meilleures conditions d'achat media via une plateforme AdTech.\n\nOuvert à un échange rapide ?\n\nA très vite\n\nRodolph Menten\nrodolph.menten@oligart.fr\n+33688354676`;
    }
-   return `Bonjour${name?` ${name}`:''}\n\nJe suis Rodolph Menten, fondateur d'Oligart — 15 ans en direction commerciale dans l'AdTech/SaaS/médias (dont +370% de CA en 2 ans chez Upday).\n\nJ'accompagne aujourd'hui des annonceurs comme ${p.company} sur leur stratégie média et l'achat 360° (branding + performance), avec des KPIs garantis contractuellement (CPC, CPM, reach) et des honoraires transparents.\n\nOuvert à un échange rapide ?\n\nA très vite\n\nRodolph Menten\nrodolph.menten@oligart.fr\n+33688354676`;
+   return `Bonjour${firstName?` ${firstName}`:''}\n\nJe suis Rodolph Menten, fondateur d'Oligart — 15 ans en direction commerciale dans l'AdTech/SaaS/médias.\n\nJ'accompagne aujourd'hui des annonceurs comme ${p.company} sur leur stratégie média et l'achat 360° (branding + performance), avec des KPIs garantis contractuellement (CPC, CPM, reach) et des honoraires transparents.\n\nOuvert à un échange rapide ?\n\nA très vite\n\nRodolph Menten\nrodolph.menten@oligart.fr\n+33688354676`;
   case 'pitch':
    if(isAgency){
     return `Chez Oligart, j'accompagne les agences media indépendantes comme ${p.company} en freelance/conseil sur le business development et le management commercial. Deux points concrets : un accès direct à de meilleures conditions d'achat media via une plateforme AdTech, et 15 ans d'expérience en direction commerciale dans l'AdTech, le SaaS et les médias. ${p.why||'Le contexte actuel'} rend ce moment pertinent pour renforcer votre commercial sans l'engagement d'un CDI à temps plein.`;
@@ -42,7 +43,7 @@ async function generate(kind,p,rawNotes){
   const r=await fetch('/.netlify/functions/generate',{
    method:'POST',
    headers:{'Content-Type':'application/json'},
-   body:JSON.stringify({kind,prospect:{company:p.company,sector:p.sector,ceoName:p.ceoName,headOfSalesName:p.headOfSalesName,targetRole:p.targetRole,why:p.why,notes:p.notes},rawNotes})
+   body:JSON.stringify({kind,prospect:{company:p.company,sector:p.sector,contactName:p.contactName,targetRole:p.targetRole,why:p.why,notes:p.notes},rawNotes})
   });
   const data=await r.json();
   if(!r.ok||!data.text)throw new Error(data.error||'Réponse IA vide');
