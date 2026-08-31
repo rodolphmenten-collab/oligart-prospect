@@ -31,12 +31,17 @@ const ROLE_TARGETS = {
   annonceur: {
     target: /marketing|digital|m[ée]dia\b|media\b|communication|brand|acquisition|growth|publicit|advertis/i,
     exclude: /\bceo\b|chief executive|founder|fondateur|pr[ée]sident|head of sales|sales director|directeur commercial|vp sales|account executive|corporate communications?|communication corporate|public relations|relations publiques|relations presse|corporate affairs|\bpr\b/i,
-    queryTerms: "directeur marketing responsable marketing head of digital directeur communication"
+    // Plusieurs requêtes distinctes plutôt qu'une seule mêlant tous les
+    // termes -- une requête combinée dilue le classement de pertinence et
+    // ne ramenait souvent qu'1 ou 2 résultats exploitables au total (vu en
+    // conditions réelles sur Jacadi). Chaque requête est lancée en
+    // parallèle et les résultats fusionnés/dédoublonnés.
+    queries: ["directeur marketing", "responsable marketing", "head of digital", "directeur communication"]
   },
   agence: {
     target: /\bceo\b|chief executive|founder|fondateur|pr[ée]sident|directeur g[ée]n[ée]ral|head of digital|dirigeant|g[ée]rant|head of sales|sales director|directeur commercial|vp sales/i,
     exclude: /account executive|directeur marketing|responsable marketing|chief marketing|community manager|charg[ée] de communication/i,
-    queryTerms: "CEO fondateur président directeur général head of digital head of sales directeur commercial"
+    queries: ["CEO fondateur", "directeur général dirigeant", "head of digital", "head of sales directeur commercial"]
   }
 };
 
@@ -120,6 +125,23 @@ function isLikelyFrance(hit) {
   return !FOREIGN_LOCATION_RE.test(`${hit.title} ${hit.content}`);
 }
 
+// Lance toutes les requêtes du mode en parallèle et fusionne/dédoublonne
+// par URL LinkedIn -- ratisse beaucoup plus large qu'une seule requête
+// combinée, qui ne ramenait souvent qu'un ou deux résultats exploitables
+// au total en conditions réelles.
+async function multiQuerySearch(mode, company, domain) {
+  const { queries } = targetsFor(mode);
+  const target = company || domain;
+  const results = await Promise.all(queries.map(q => linkedinSearchViaTavily(`${target} France ${q}`)));
+  const seen = new Map();
+  for (const hits of results) {
+    for (const h of hits) {
+      if (!seen.has(h.linkedin)) seen.set(h.linkedin, h);
+    }
+  }
+  return [...seen.values()];
+}
+
 async function hunterEmailFinder(fullName, company) {
   if (!process.env.HUNTER_API_KEY || !fullName) return "";
   try {
@@ -152,12 +174,12 @@ async function aiPickCandidates(hits, company, mode) {
     const targetDescription = mode === "agence"
       ? "trouver le CEO/fondateur, le Head of Digital ou le responsable commercial (Head of Sales/Directeur Commercial) de l'agence media indépendante française"
       : "trouver le décideur qui gère le budget media/marketing/digital de l'entreprise française";
-    const prompt = `Voici des résultats de recherche LinkedIn pour ${targetDescription} "${company}".\n\n${hitsText}\n\nAnalyse chaque résultat et identifie UNIQUEMENT les personnes qui :\n1. Travaillent réellement pour "${company}" en FRANCE (pas une entreprise homonyme dans un autre pays -- vérifie bien qu'il s'agit de la bonne entité)\n2. ${roleInstruction}\n\nRéponds UNIQUEMENT en JSON valide, sans texte autour, format exact :\n{"candidates": [{"index": 0, "name": "Prénom Nom", "role": "intitulé du poste", "reasoning": "pourquoi cette personne correspond, en une phrase"}]}\n\nSi aucun résultat ne correspond clairement, réponds {"candidates": []}. Ne devine jamais -- si un doute sérieux existe sur l'entreprise ou le poste, exclus ce résultat.`;
+    const prompt = `Voici des résultats de recherche LinkedIn pour ${targetDescription} "${company}".\n\n${hitsText}\n\nAnalyse chaque résultat et identifie les personnes qui :\n1. Travaillent (ou ont un lien clair, même passé/multi-casquettes) avec "${company}" en FRANCE (pas une entreprise homonyme dans un autre pays)\n2. ${roleInstruction}\n\nObjectif : proposer à l'utilisateur JUSQU'À 6 candidats PLAUSIBLES parmi lesquels choisir lui-même -- pas seulement le meilleur. Inclus un candidat même en cas de doute modéré (indique-le dans "confidence"), n'exclus que les cas clairement hors sujet (mauvais pays, poste sans rapport, mauvaise entreprise). Mieux vaut proposer un candidat incertain que de n'en proposer aucun.\n\nRéponds UNIQUEMENT en JSON valide, sans texte autour, format exact :\n{"candidates": [{"index": 0, "name": "Prénom Nom", "role": "intitulé du poste", "confidence": "élevée|moyenne|faible", "reasoning": "pourquoi cette personne pourrait correspondre, en une phrase"}]}\n\nSi vraiment aucun résultat n'a de lien plausible avec l'entreprise, réponds {"candidates": []}.`;
 
     const r = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-api-key": process.env.ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01" },
-      body: JSON.stringify({ model: AI_MODEL, max_tokens: 600, messages: [{ role: "user", content: prompt }] })
+      body: JSON.stringify({ model: AI_MODEL, max_tokens: 1200, messages: [{ role: "user", content: prompt }] })
     });
     if (!r.ok) return null;
     const data = await r.json();
@@ -166,9 +188,13 @@ async function aiPickCandidates(hits, company, mode) {
     if (!jsonMatch) return null;
     const parsed = JSON.parse(jsonMatch[0]);
     if (!Array.isArray(parsed.candidates)) return null;
+    // Confiance élevée d'abord, pour que le Contact 1 initial soit le
+    // meilleur pari plutôt qu'un ordre arbitraire.
+    const confidenceRank = { "élevée": 0, "moyenne": 1, "faible": 2 };
     return parsed.candidates
       .filter(c => typeof c.index === "number" && hits[c.index])
-      .map(c => ({ name: c.name || hits[c.index].name, role: c.role || hits[c.index].role, email: "", linkedin: hits[c.index].linkedin, aiReasoning: c.reasoning || "" }));
+      .sort((a, b) => (confidenceRank[a.confidence] ?? 1) - (confidenceRank[b.confidence] ?? 1))
+      .map(c => ({ name: c.name || hits[c.index].name, role: c.role || hits[c.index].role, email: "", linkedin: hits[c.index].linkedin, aiReasoning: c.reasoning || "", confidence: c.confidence || "" }));
   } catch { return null; } // une IA indisponible ne doit jamais bloquer la recherche
 }
 
@@ -186,15 +212,16 @@ exports.handler = async (event) => {
     }
     const AGENCY_CATEGORIES = ["Agences Média Indépendantes"];
     const mode = AGENCY_CATEGORIES.includes(category) ? "agence" : "annonceur";
-    const { target, exclude, queryTerms } = targetsFor(mode);
+    const { target, exclude } = targetsFor(mode);
 
     let candidates = await hunterDomainSearch(company, domain, mode);
     let source = "hunter";
     if (!candidates.length) {
-      // "France" explicitement dans la requête : sans ça, une entreprise au
-      // nom homonyme à l'étranger (ex. un "Intersport" américain sans
-      // rapport) peut ressortir en premier -- vu en conditions réelles.
-      const hits = await linkedinSearchViaTavily(`${company || domain} France ${queryTerms}`);
+      // Plusieurs requêtes en parallèle (une par terme de poste), fusionnées
+      // et dédoublonnées -- une seule requête combinée ne ramenait souvent
+      // qu'1-2 résultats exploitables au total (vu en conditions réelles sur
+      // Jacadi : "Candidat 1/1", rien d'autre à proposer).
+      const hits = await multiQuerySearch(mode, company, domain);
 
       // Vérification explicite que le nom de l'entreprise apparaît dans le
       // contenu réel du profil (titre OU extrait de bio) -- absente avant
@@ -212,8 +239,9 @@ exports.handler = async (event) => {
 
       // Priorité à la désambiguïsation IA (raisonne vraiment sur chaque
       // résultat, y compris le contenu complet de la bio -- pas seulement
-      // le titre) ; repli sur le filtrage par mots-clés/liste de blocage
-      // si pas de clé Anthropic ou si l'appel échoue.
+      // le titre, et propose jusqu'à 6 candidats plausibles plutôt qu'un
+      // seul "meilleur" choix) ; repli sur le filtrage par mots-clés/liste
+      // de blocage si pas de clé Anthropic ou si l'appel échoue.
       const aiPicked = await aiPickCandidates(hits, company || domain, mode);
       if (aiPicked && aiPicked.length) {
         candidates = aiPicked;
@@ -267,7 +295,7 @@ exports.handler = async (event) => {
     // multiplier les appels API à chaque recherche -- les suivants gardent
     // les infos déjà obtenues par la recherche initiale (nom/poste/parfois
     // LinkedIn/parfois email si Hunter Domain Search les avait déjà).
-    const candidatesList = candidates.slice(0, 5);
+    const candidatesList = candidates.slice(0, 6);
     const contact1 = await finalize(candidatesList[0]);
     const contact2 = candidatesList[1] ? await finalize(candidatesList[1]) : null;
     const restFinalized = candidatesList.slice(2).map(c => ({ name: c.name, role: c.role, email: c.email || "", linkedin: c.linkedin || "", source }));
