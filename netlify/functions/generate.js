@@ -19,9 +19,10 @@ const PROMPTS = {
     `Notes internes : ${p.notes || "aucune"}. ` +
     `Pas d'objet, juste le corps de l'email.`,
   linkedin_dm: (p) =>
-    `Rédige un message LinkedIn court (500 caractères max), en français, direct et personnalisé, ` +
-    `pour approcher ${p.ceoName || p.targetRole || "le décideur"} de ${p.company} au sujet de sa stratégie média digitale. ` +
-    `Contexte : ${p.why || "aucun contexte spécifique"}. Positionnement (choisir 1-2 points marquants, pas tout) : ${OLIGART_PITCH} Signé Rodolph Menten.`,
+    `Rédige un message LinkedIn court (500 caractères max hors signature), en français, direct et personnalisé, ` +
+    `pour approcher ${p.targetRole || "le décideur"} de ${p.company} au sujet de sa stratégie média digitale. ` +
+    `Contexte : ${p.why || "aucun contexte spécifique"}. Positionnement (choisir 1-2 points marquants, pas tout) : ${OLIGART_PITCH} ` +
+    `Format attendu, en paragraphes courts séparés par des sauts de ligne (pas un bloc dense) : formule d'accueil, un paragraphe de présentation/crédibilité, un paragraphe sur l'accompagnement proposé, une question d'ouverture courte, puis "A très vite" et la signature exacte sur 3 lignes : "Rodolph Menten", "rodolph.menten@oligart.fr", "+33688354676".`,
   pitch: (p) =>
     `Rédige un pitch oral de 3 phrases (pour un appel de 20 minutes), en français, expliquant ` +
     `pourquoi Oligart peut aider ${p.company} (secteur ${p.sector || "n/c"}). Positionnement : ${OLIGART_PITCH} ` +
