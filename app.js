@@ -81,6 +81,10 @@ function renderTable(){const list=filtered().sort((a,b)=>b.score-a.score);$('#ta
 function renderBoard(){
  $('#kanban').innerHTML=BOARD_STATUSES.map(st=>{const list=prospects.filter(p=>p.status===st).sort((a,b)=>b.score-a.score);return `<div class="column" data-status="${esc(st)}"><div class="column-head"><b>${esc(st)}</b><span>${list.length}</span></div>${list.slice(0,60).map(p=>`<div class="card" draggable="true" data-id="${esc(p.id)}"><b>${esc(p.company)}</b><p>${esc(p.sector)} · score ${p.score}</p></div>`).join('')}</div>`}).join('');
  $$('.card').forEach(c=>c.addEventListener('dragstart',e=>e.dataTransfer.setData('text/plain',c.dataset.id)));
+ // Clic sur une carte = ouvre la fiche complète (distinct du drag qui sert
+ // à changer le statut) -- le drag natif HTML5 ne déclenche pas de click
+ // après un vrai déplacement, donc les deux cohabitent sans conflit.
+ $$('.card').forEach(c=>c.addEventListener('click',()=>openProspect(c.dataset.id)));
  $$('.column').forEach(c=>{c.addEventListener('dragover',e=>e.preventDefault());c.addEventListener('drop',e=>{e.preventDefault();const p=prospects.find(x=>x.id===e.dataTransfer.getData('text/plain'));if(p){p.status=c.dataset.status;p.lastContact=today();if(p.status==='Contacté')p.nextFollowUp=today(4);save();toast('Statut mis à jour')}})})
 }
 function renderToday(){const due=prospects.filter(p=>(p.nextFollowUp&&p.nextFollowUp<=today())||(p.status==='À contacter'&&p.priority==='A')).sort((a,b)=>b.score-a.score);$('#todayList').innerHTML=due.length?due.map(row).join(''):'<p class="muted">Rien d’urgent aujourd’hui.</p>'}
@@ -211,20 +215,24 @@ $$('[data-close-email-modal]').forEach(x=>x.onclick=()=>$('#emailModal').classLi
 // porte tous les champs demandés (destinataire, objet, contenu, statut, date).
 $('#emailForm').onsubmit=async(e)=>{
  e.preventDefault();
- const p=selected;if(!p)return;
  const to=$('#emTo').value,subject=$('#emSubject').value,text=$('#emBody').value;
+ // Répondre depuis la boîte de réception n'a pas forcément de fiche
+ // prospect ouverte (contrairement à un envoi classique depuis une fiche) --
+ // on retrouve le prospect correspondant par email si possible, mais
+ // l'envoi doit réussir même sans correspondance, jamais un échec silencieux.
+ const EMAIL_FIELDS=['contactEmail','ceoEmail','headOfSalesEmail'];
+ const p=selected&&selected.contactEmail===to?selected:prospects.find(x=>EMAIL_FIELDS.some(f=>(x[f]||'').toLowerCase()===to.toLowerCase()));
  $('#emStatus').textContent='Envoi en cours...';
  try{
   const r=await fetch('/.netlify/functions/send-email',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({to,subject,text})});
   const d=await r.json();
   if(!r.ok)throw new Error(d.error||'Envoi impossible');
-  p.status='Contacté';p.lastContact=today();p.nextFollowUp=today(4);
-  addTimelineEntry(p,{channel:'email',type:'auto',status:'sent',to,subject,body:text,note:`Email envoyé à ${to} : "${subject}"`});
+  if(p){p.status='Contacté';p.lastContact=today();p.nextFollowUp=today(4);addTimelineEntry(p,{channel:'email',type:'auto',status:'sent',to,subject,body:text,note:`Email envoyé à ${to} : "${subject}"`})}
   $('#emailModal').classList.remove('open');
   toast('Email envoyé');
-  if($('#drawer').classList.contains('open'))openProspect(p.id);
+  if(p&&$('#drawer').classList.contains('open'))openProspect(p.id);
  }catch(err){
-  addTimelineEntry(p,{channel:'email',type:'auto',status:'failed',to,subject,body:text,note:`Échec d'envoi à ${to} : ${err.message}`});
+  if(p)addTimelineEntry(p,{channel:'email',type:'auto',status:'failed',to,subject,body:text,note:`Échec d'envoi à ${to} : ${err.message}`});
   $('#emStatus').textContent=`Échec de l'envoi : ${err.message}`;
  }
 };

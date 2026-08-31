@@ -39,6 +39,9 @@ async function renderInbox(){
  }
 }
 
+// Signature standard, ajoutée automatiquement au bas de chaque réponse.
+const SIGNATURE = "\n\nRodolph Menten\nOligart Agency\nrodolph.menten@oligart.fr\n+33688354676";
+
 async function openEmailMessage(uid){
  const esc=window.Oligart?.esc||(s=>s);
  const modal=document.querySelector('#emailViewModal');
@@ -55,6 +58,24 @@ async function openEmailMessage(uid){
   document.querySelector('#emailViewSubject').textContent=m.subject;
   document.querySelector('#emailViewMeta').textContent=`De : ${m.from} — ${m.date?new Date(m.date).toLocaleString('fr-FR'):''}`;
   document.querySelector('#emailViewBody').textContent=m.text||'(pas de contenu texte disponible)';
+
+  // Répondre : ouvre le modal d'envoi existant, pré-rempli (destinataire,
+  // "Re: objet", corps vide + signature) -- comme une vraie boîte mail.
+  document.querySelector('#emailViewReplyBtn').onclick=()=>{
+   modal.classList.remove('open');
+   const fromEmail=(m.from.match(/[\w.+-]+@[\w-]+\.[\w.-]+/)||[])[0]||m.from;
+   document.querySelector('#emailModalTitle').textContent=`Répondre — ${fromEmail}`;
+   document.querySelector('#emTo').value=fromEmail;
+   document.querySelector('#emSubject').value=/^re\s*:/i.test(m.subject)?m.subject:`Re: ${m.subject}`;
+   document.querySelector('#emBody').value=SIGNATURE.trim()+"\n\n";
+   document.querySelector('#emStatus').textContent='';
+   document.querySelector('#emailModal').classList.add('open');
+   // Curseur en haut du champ, prêt à écrire la réponse au-dessus de la
+   // signature déjà en place.
+   const body=document.querySelector('#emBody');
+   body.focus();body.setSelectionRange(0,0);
+  };
+
   // Si l'expéditeur correspond à un contact connu (contact 1/2, CEO, Head
   // of Sales), un bouton permet d'ouvrir directement sa fiche.
   const fromEmailMatch=(m.from.match(/[\w.+-]+@[\w-]+\.[\w.-]+/)||[])[0]?.toLowerCase();
