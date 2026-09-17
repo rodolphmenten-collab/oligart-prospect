@@ -5,7 +5,10 @@
 // sans action explicite de Rodolph.
 const { scanStore } = require("./_store");
 
-exports.handler = async () => {
+const { guard: __guard } = require("./_auth");
+exports.handler = async (event) => {
+  const __denied = __guard(event);
+  if (__denied) return __denied;
   const store = scanStore();
   const suggestions = (await store.get("career-suggestions")) || [];
   const lastRun = (await store.get("career-last-run")) || null;

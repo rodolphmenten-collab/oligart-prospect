@@ -202,7 +202,10 @@ async function aiPickCandidates(hits, company, mode) {
   } catch { return null; } // une IA indisponible ne doit jamais bloquer la recherche
 }
 
+const { guard: __guard } = require("./_auth");
 exports.handler = async (event) => {
+  const __denied = __guard(event);
+  if (__denied) return __denied;
   if (event.httpMethod !== "POST") {
     return { statusCode: 405, body: JSON.stringify({ error: "Méthode non autorisée" }) };
   }

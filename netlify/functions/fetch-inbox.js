@@ -75,7 +75,10 @@ async function readMessage(client, uid) {
   }
 }
 
+const { guard: __guard } = require("./_auth");
 exports.handler = async (event) => {
+  const __denied = __guard(event);
+  if (__denied) return __denied;
   if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
     return { statusCode: 501, body: JSON.stringify({ error: "SMTP_USER/SMTP_PASS non configurées sur Netlify" }) };
   }

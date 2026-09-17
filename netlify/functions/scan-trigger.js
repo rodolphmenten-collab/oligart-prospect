@@ -9,7 +9,10 @@ const { scanStore } = require("./_store");
 
 const COOLDOWN_MS = 10 * 60 * 1000;
 
+const { guard: __guard, forwardHeader: __forward } = require("./_auth");
 exports.handler = async (event) => {
+  const __denied = __guard(event);
+  if (__denied) return __denied;
   if (event.httpMethod !== "POST") {
     return { statusCode: 405, body: JSON.stringify({ error: "Méthode non autorisée" }) };
   }
@@ -28,7 +31,7 @@ exports.handler = async (event) => {
     if (!host) throw new Error("Host introuvable dans la requête");
     // Fire-and-forget côté logique métier : Netlify répond 202 à cet appel
     // dès l'invocation de la fonction d'arrière-plan, sans attendre sa fin.
-    await fetch(`https://${host}/.netlify/functions/scan-run-background`, { method: "POST" });
+    await fetch(`https://${host}/.netlify/functions/scan-run-background`, { method: "POST", headers: __forward(event) });
   } catch (e) {
     return { statusCode: 500, body: JSON.stringify({ error: "Impossible de lancer le scan : " + e.message }) };
   }

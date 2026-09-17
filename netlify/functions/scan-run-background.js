@@ -9,7 +9,10 @@ const { runRadarScan, runCareerScan } = require("./_scan-lib");
 const { scanStore } = require("./_store");
 const companies = require("./_companies.json");
 
-exports.handler = async () => {
+const { guard: __guard } = require("./_auth");
+exports.handler = async (event) => {
+  const __denied = __guard(event);
+  if (__denied) return __denied;
   const store = scanStore();
   await store.set("manual-scan-status", { state: "running", startedAt: Date.now() });
   const deps = { store, fetchImpl: fetch, apiKey: process.env.ANTHROPIC_API_KEY };

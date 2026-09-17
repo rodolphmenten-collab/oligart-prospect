@@ -4,7 +4,10 @@
 // réponse synchrone qui dépasserait la limite de 10s de Netlify.
 const { scanStore } = require("./_store.js");
 
-exports.handler = async () => {
+const { guard: __guard } = require("./_auth");
+exports.handler = async (event) => {
+  const __denied = __guard(event);
+  if (__denied) return __denied;
   const store = scanStore();
   const status = (await store.get("career-free-scan-status")) || { state: "idle" };
   return { statusCode: 200, body: JSON.stringify(status) };

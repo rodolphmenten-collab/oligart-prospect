@@ -3,7 +3,10 @@
 // plutôt qu'un simple message "lancé" sans confirmation.
 const { scanStore } = require("./_store");
 
-exports.handler = async () => {
+const { guard: __guard } = require("./_auth");
+exports.handler = async (event) => {
+  const __denied = __guard(event);
+  if (__denied) return __denied;
   const store = scanStore();
   const status = (await store.get("manual-scan-status")) || { state: "idle" };
   return { statusCode: 200, body: JSON.stringify(status) };

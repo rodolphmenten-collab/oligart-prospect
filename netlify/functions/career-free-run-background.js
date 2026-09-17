@@ -10,7 +10,10 @@ const { runFreeCareerScan } = require("./_career-free.js");
 const { scanStore } = require("./_store.js");
 const companies = require("../../career-companies.json");
 
-exports.handler = async () => {
+const { guard: __guard } = require("./_auth");
+exports.handler = async (event) => {
+  const __denied = __guard(event);
+  if (__denied) return __denied;
   const store = scanStore();
   await store.set("career-free-scan-status", { state: "running", startedAt: Date.now() });
   try {

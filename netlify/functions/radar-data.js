@@ -4,7 +4,10 @@
 // plutôt qu'une erreur — le client affiche alors son état vide habituel.
 const { scanStore } = require("./_store");
 
-exports.handler = async () => {
+const { guard: __guard } = require("./_auth");
+exports.handler = async (event) => {
+  const __denied = __guard(event);
+  if (__denied) return __denied;
   const store = scanStore();
   const signals = (await store.get("radar-signals")) || [];
   const lastRun = (await store.get("radar-last-run")) || null;

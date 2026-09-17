@@ -39,7 +39,10 @@ const PROMPTS = {
     `Contexte, Points clés, Décisions, Prochaines étapes avec échéances). Notes brutes :\n${p.rawNotes || ""}`
 };
 
+const { guard: __guard } = require("./_auth");
 exports.handler = async (event) => {
+  const __denied = __guard(event);
+  if (__denied) return __denied;
   if (event.httpMethod !== "POST") {
     return { statusCode: 405, body: JSON.stringify({ error: "Méthode non autorisée" }) };
   }

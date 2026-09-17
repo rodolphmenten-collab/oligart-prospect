@@ -20,7 +20,10 @@ const EFFECTIF_LABELS = {
   "52": "5000-9999 salariés", "53": "10000+ salariés"
 };
 
+const { guard: __guard } = require("./_auth");
 exports.handler = async (event) => {
+  const __denied = __guard(event);
+  if (__denied) return __denied;
   if (event.httpMethod !== "POST") {
     return { statusCode: 405, body: JSON.stringify({ error: "Méthode non autorisée" }) };
   }

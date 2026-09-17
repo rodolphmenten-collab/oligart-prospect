@@ -22,7 +22,10 @@ const MANUAL_FINDS = [
   { role: "VP Sales H/F", company: "Skilleos", link: "https://fr.linkedin.com/jobs/view/vp-sales-h-f-at-skilleos-3257952726", source: "LinkedIn", note: "Membre du Comité de Direction, pilotage stratégie commerciale, objectif 10M€ CA." }
 ];
 
-exports.handler = async () => {
+const { guard: __guard } = require("./_auth");
+exports.handler = async (event) => {
+  const __denied = __guard(event);
+  if (__denied) return __denied;
   const store = scanStore();
   const existing = (await store.get("career-suggestions")) || [];
   const existingIds = new Set(existing.map(s => s.id));

@@ -11,7 +11,10 @@ const { scanStore } = require("./_store.js");
 
 const COOLDOWN_MS = 2 * 60 * 1000;
 
+const { guard: __guard, forwardHeader: __forward } = require("./_auth");
 exports.handler = async (event) => {
+  const __denied = __guard(event);
+  if (__denied) return __denied;
   if (event.httpMethod !== "POST") {
     return { statusCode: 405, body: JSON.stringify({ error: "Méthode non autorisée" }) };
   }
@@ -30,7 +33,7 @@ exports.handler = async (event) => {
     if (!host) throw new Error("Host introuvable dans la requête");
     // Fire-and-forget : on n'attend pas la fin de l'exécution de la fonction
     // d'arrière-plan, seulement la confirmation qu'elle a bien démarré.
-    await fetch(`https://${host}/.netlify/functions/career-free-run-background`, { method: "POST" });
+    await fetch(`https://${host}/.netlify/functions/career-free-run-background`, { method: "POST", headers: __forward(event) });
   } catch (e) {
     return { statusCode: 500, body: JSON.stringify({ error: "Impossible de lancer le scan : " + e.message }) };
   }
