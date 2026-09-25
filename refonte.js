@@ -64,6 +64,15 @@ function styles(){
  .rf-shots{display:flex;gap:14px;flex-wrap:wrap;margin:12px 0}
  .rf-shots img{max-width:260px;border-radius:8px;border:1px solid rgba(255,255,255,.14)}
  .rf-probs li{margin-bottom:7px}
+ /* Aperçu : on rend le mail tel qu'il arrivera chez le prospect — fond clair,
+    police de messagerie, liens cliquables et vignette de la maquette. */
+ #rfPreview{background:#fff;color:#1a1a1a;border-radius:10px;padding:20px;font:15px/1.6 -apple-system,'Segoe UI',Roboto,sans-serif;max-height:340px;overflow:auto}
+ #rfPreview .rf-pv-obj{font-weight:700;font-size:16px;border-bottom:1px solid #e5e7eb;padding-bottom:10px;margin-bottom:12px;color:#111}
+ #rfPreview .rf-pv-de{color:#6b7280;font-size:13px;margin-bottom:12px}
+ #rfPreview a{color:#1d4ed8}
+ #rfPreview .rf-pv-shot{margin-top:14px}
+ #rfPreview .rf-pv-shot img{max-width:190px;border:1px solid #e5e7eb;border-radius:8px}
+ #rfPreview .rf-pv-vide{color:#9ca3af;font-style:italic}
  `;
  document.head.appendChild(s);
 }
@@ -214,6 +223,28 @@ function brouillon(p,relance){
  };
 }
 
+// Aperçu du mail tel qu'il arrivera : rien ne part sans que Rodolph ait vu
+// le rendu réel, liens compris. Se rafraîchit à chaque frappe.
+function apercu(){
+ const wrap=document.querySelector('#rfMsgModal'); if(!wrap)return;
+ const cible=wrap.querySelector('#rfPreview'); if(!cible)return;
+ const p=window.Oligart.getProspect(wrap.dataset.id||'');
+ const to=wrap.querySelector('#rfTo').value.trim();
+ const subject=wrap.querySelector('#rfSubject').value.trim();
+ const body=wrap.querySelector('#rfBody').value;
+ // On échappe tout, puis on ne réintroduit que les liens — jamais de HTML
+ // venant du texte saisi.
+ const lignes=E(body).split('\n').map(l=>
+   l.replace(/(https?:\/\/[^\s<]+)/g,'<a href="$1" target="_blank" rel="noopener">$1</a>')
+ ).join('<br>');
+ const shot=p&&R(p)&&R(p).shotMobile
+   ? `<div class="rf-pv-shot"><img src="${E(R(p).shotMobile)}" alt="Aperçu mobile de la maquette"></div>` : '';
+ cible.innerHTML=
+  `<div class="rf-pv-de">De : Rodolph Menten &lt;rodolph.menten@oligart.fr&gt;<br>À : ${E(to)||'<span class="rf-pv-vide">destinataire manquant</span>'}</div>`+
+  `<div class="rf-pv-obj">${E(subject)||'<span class="rf-pv-vide">objet manquant</span>'}</div>`+
+  (body.trim()?lignes:'<span class="rf-pv-vide">message vide</span>')+shot;
+}
+
 function ouvrirMessage(id,relance){
  const p=window.Oligart.getProspect(id); if(!p)return;
  const r=R(p);
@@ -226,6 +257,7 @@ function ouvrirMessage(id,relance){
  wrap.dataset.id=id; wrap.dataset.relance=relance?'1':'';
  wrap.querySelector('#rfStatus').textContent='';
  wrap.classList.add('open');
+ apercu();
 }
 
 async function envoyer(viaMailto){
@@ -321,6 +353,7 @@ function init(){
  const mw=document.querySelector('#rfMsgModal');
  if(mw){
   mw.querySelectorAll('[data-rf-close]').forEach(b=>b.onclick=()=>mw.classList.remove('open'));
+  ['#rfTo','#rfSubject','#rfBody'].forEach(sel=>{const el=mw.querySelector(sel); if(el)el.addEventListener('input',apercu)});
   const send=mw.querySelector('#rfSend'); if(send)send.onclick=()=>envoyer(false);
   const gm=mw.querySelector('#rfGmail'); if(gm)gm.onclick=()=>envoyer(true);
   const cp=mw.querySelector('#rfCopy');
