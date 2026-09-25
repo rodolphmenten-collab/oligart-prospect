@@ -21,6 +21,7 @@
     <button class="nav" data-view="career">Opportunités Carrière</button>
     <button class="nav" data-view="analytics">Analytics</button>
     <button class="nav" data-view="emails">Emails</button>
+    <button class="nav" data-view="refonte">Offre Refonte &amp; Pack Trafic</button>
     <button class="nav" data-view="settings">Paramètres</button>
   </nav>
   <div class="side-bottom">
@@ -87,6 +88,11 @@
  <div id="emailsSentView"></div>
  <div id="emailsInboxView" style="display:none"></div>
 </section>
+<section id="refonte" class="view">
+ <div class="metrics" id="rfDash" style="grid-template-columns:repeat(4,1fr)"></div>
+ <div class="toolbar" style="margin-top:16px"><input id="rfSearch" placeholder="Rechercher une entreprise, un secteur, une ville"><select id="rfStatusFilter"></select></div>
+ <div class="panel"><div class="panel-head"><h3>Prospects de la campagne</h3><span class="muted">Clique une colonne pour trier · « Valider » puis « Message » sont réservés à Rodolph</span></div><div id="rfTable"></div></div>
+</section>
 <section id="settings" class="view">
  <div class="two-col">
   <article class="panel">
@@ -116,5 +122,15 @@
 <div id="emailModal" class="modal"><div class="backdrop" data-close-email-modal></div><form id="emailForm" class="modal-card"><button class="close" type="button" data-close-email-modal>×</button><p class="eyebrow">ENVOYER UN EMAIL</p><h2 id="emailModalTitle">Email</h2><label>Destinataire<input id="emTo" type="email" required></label><label>Objet<input id="emSubject" required></label><label>Message<textarea id="emBody" class="message" required></textarea></label><p class="muted" id="emStatus"></p><button class="btn primary" type="submit">Envoyer</button></form></div>
 <div id="emailViewModal" class="modal"><div class="backdrop" data-close-emailview-modal></div><div class="modal-card"><button class="close" type="button" data-close-emailview-modal>×</button><p class="eyebrow">EMAIL REÇU</p><h2 id="emailViewSubject"></h2><p class="muted" id="emailViewMeta"></p><div id="emailViewBody" style="white-space:pre-wrap;max-height:60vh;overflow:auto;line-height:1.5"></div><div class="actions" style="margin-top:14px"><button id="emailViewReplyBtn" class="btn primary">Répondre</button><button id="emailViewProspectBtn" class="btn secondary" style="display:none"></button></div></div></div>
 <div id="toast" class="toast"></div>
-<script src="auth.js?v=clean-2"></script><script src="data.js?v=clean-1"></script><script src="app.js?v=clean-1"></script><script src="priorities.js?v=clean-1"></script><script src="outreach.js?v=clean-1"></script><script src="radar.js?v=clean-1"></script><script src="career.js?v=clean-1"></script><script src="ai.js?v=clean-1"></script><script src="settings.js?v=clean-1"></script><script src="dashboard-extra.js?v=clean-1"></script><script src="analytics.js?v=clean-1"></script><script src="emails.js?v=clean-1"></script>
+<div id="rfMsgModal" class="rf-modal"><div class="backdrop" data-rf-close style="position:absolute;inset:0"></div>
+ <div class="rf-modal-card" style="position:relative">
+  <button class="close" type="button" data-rf-close>×</button>
+  <p class="eyebrow">CAMPAGNE REFONTE</p><h2 style="margin-top:0">Message à relire avant envoi</h2>
+  <label>Destinataire</label><input id="rfTo" type="email">
+  <label>Objet</label><input id="rfSubject">
+  <label>Message</label><textarea id="rfBody"></textarea>
+  <p class="muted" id="rfStatus" style="min-height:20px"></p>
+  <div class="actions"><button id="rfSend" class="btn primary" type="button">Envoyer depuis Oligart</button><button id="rfGmail" class="btn secondary" type="button">Ouvrir dans Gmail</button><button id="rfCopy" class="btn secondary" type="button">Copier</button></div>
+ </div></div>
+<script src="store.js?v=rf-1"></script><script src="auth.js?v=clean-2"></script><script src="data.js?v=clean-1"></script><script src="app.js?v=clean-1"></script><script src="priorities.js?v=clean-1"></script><script src="outreach.js?v=clean-1"></script><script src="radar.js?v=clean-1"></script><script src="career.js?v=clean-1"></script><script src="ai.js?v=clean-1"></script><script src="settings.js?v=clean-1"></script><script src="dashboard-extra.js?v=clean-1"></script><script src="analytics.js?v=clean-1"></script><script src="emails.js?v=clean-1"></script><script src="refonte.js?v=rf-1"></script>
 </body></html>
