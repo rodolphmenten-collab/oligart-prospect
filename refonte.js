@@ -23,6 +23,9 @@ const COLOR={
  [ST.REPONSE]:'#16a34a',[ST.SIGNE]:'#15803d',[ST.PROD]:'#ca8a04',[ST.LIVRE]:'#065f46',[ST.CLOS]:'#374151'
 };
 const PACK={P500:{label:'Pack Site',prix:500},P3500:{label:'Pack Site + Trafic',prix:3500}};
+// Le deck de l'offre : une page en ligne et un PDF a joindre au mail.
+// Une seule source pour les deux, pour ne pas avoir deux adresses qui divergent.
+const DECK={page:'/offre/',pdf:'/offre/Oligart-Offre-Refonte-et-Pack-Trafic.pdf'};
 
 let sortKey='total', sortDir=-1, filterStatus='', filterQuery='';
 
@@ -55,6 +58,10 @@ function styles(){
  #refonte .rf-num{font-variant-numeric:tabular-nums;text-align:right}
  #refonte .rf-mini{padding:4px 10px;font-size:13px}
  #refonte .rf-scroll{overflow-x:auto}
+ #refonte .rf-deck{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;border:1px solid var(--line,#26303f);border-radius:12px;padding:14px 18px;margin-bottom:18px;background:rgba(139,92,246,.07)}
+ #refonte .rf-deck b{color:#e8edf5}
+ #refonte .rf-deck span{color:#93a1b5;font-size:14px}
+ #refonte .rf-deck-liens{display:flex;gap:8px;flex-wrap:wrap}
  #refonte .rf-empty{padding:28px;text-align:center}
  .rf-modal{position:fixed;inset:0;z-index:99990;display:none;align-items:center;justify-content:center;background:rgba(9,12,18,.9)}
  .rf-modal.open{display:flex}
@@ -219,7 +226,7 @@ function brouillon(p,relance){
   : `J'ai regardé le site de ${p.company}.`;
  return {
   objet:`Votre site sur mobile, ${p.company}`,
-  corps:`Bonjour${prenom},\n\n${ouverture}\n\nDeux choses m'ont sauté aux yeux :\n· ${pr[0]||''}\n· ${pr[1]||''}\n\nJe vous offre le diagnostic complet de votre site, et j'ai imaginé à quoi il pourrait ressembler :\n· Diagnostic : ${r.diagnosticUrl||''}\n· Maquette : ${r.maquetteUrl||''}\n\nDeux formules :\n· Site refait, livré en 10 jours ouvrés — 500 € HT\n· Site + campagne de trafic sur des sites médias premium — 3 500 € HT\n\n15 minutes cette semaine pour en parler ?\n\nRodolph Menten\nOligart Agency\n+33 6 88 35 46 76\noligart-agency.com\n\nSi ce n'est pas le sujet, répondez simplement "non" et je ne vous recontacterai pas.`
+  corps:`Bonjour${prenom},\n\n${ouverture}\n\nDeux choses m'ont sauté aux yeux :\n· ${pr[0]||''}\n· ${pr[1]||''}\n\nJe vous offre le diagnostic complet de votre site, et j'ai imaginé à quoi il pourrait ressembler :\n· Diagnostic : ${r.diagnosticUrl||''}\n· Maquette : ${r.maquetteUrl||''}\n\nEt le détail de l'offre en huit pages : ${location.origin}${DECK.page}\n\nDeux formules :\n· Site refait, livré en 10 jours ouvrés — 500 € HT\n· Site + campagne de trafic sur des sites médias premium — 3 500 € HT\n\n15 minutes cette semaine pour en parler ?\n\nRodolph Menten\nOligart Agency\n+33 6 88 35 46 76\noligart-agency.com\n\nSi ce n'est pas le sujet, répondez simplement "non" et je ne vous recontacterai pas.`
  };
 }
 
@@ -294,6 +301,22 @@ async function envoyer(viaMailto){
  window.Oligart.toast(relance?'Relance enregistrée':'Message enregistré');
 }
 
+// --- deck de l'offre ------------------------------------------------------
+// Affiche en haut de la rubrique les deux liens du deck. Injecte une seule
+// fois : si la barre existe deja, on ne la reconstruit pas a chaque rendu.
+function renderDeck(sec){
+ if(sec.querySelector('#rfDeck'))return;
+ const dash=sec.querySelector('#rfDash'); if(!dash)return;
+ const bar=document.createElement('div');
+ bar.id='rfDeck'; bar.className='rf-deck';
+ bar.innerHTML=`<span><b>Deck de l'offre</b> — 8 pages, chiffres sourcés, aucune mention de plateforme.</span>`+
+  `<span class="rf-deck-liens">`+
+  `<a class="btn secondary rf-mini" href="${DECK.page}" target="_blank" rel="noopener">Ouvrir le deck</a>`+
+  `<a class="btn secondary rf-mini" href="${DECK.pdf}" target="_blank" rel="noopener" download>Télécharger le PDF</a>`+
+  `</span>`;
+ dash.parentNode.insertBefore(bar,dash);
+}
+
 // --- rendu principal ------------------------------------------------------
 function render(){
  if(!window.Oligart)return;
@@ -307,6 +330,7 @@ function render(){
   tbl.innerHTML='<p class="muted rf-empty">Aucun prospect n’est encore entré dans cette campagne.<br>Les fiches apparaissent ici dès que le rôle SDR les a auditées.</p>';
   return;
  }
+ renderDeck(sec);
  renderDash(dash,list);
  renderTable(tbl,list);
 }
