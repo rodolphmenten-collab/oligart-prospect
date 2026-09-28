@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Offre Refonte &amp; Pack Trafic — Oligart Agency</title>
+<meta name="description" content="Refonte de site pour TPE et PME : diagnostic gratuit, maquette avant devis, site livré en 10 jours ouvrés. Pack Site 500 € HT, Pack Site + Trafic 3 500 € HT.">
+<style>
+:root{
+ --noir:#0a0908; --creme:#f3f0e8; --gris:#a49e93; --ligne:#2a2724;
+ --or:#c8a862; --vert:#6fae86;
+ --sans:"Liberation Sans",Inter,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+ --titre:"DejaVu Sans Condensed","Liberation Sans Narrow","Arial Narrow",var(--sans);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{background:#17151300;background-color:#131110;font-family:var(--sans);color:var(--creme);
+ display:flex;flex-direction:column;align-items:center;gap:26px;padding:26px 16px 60px}
+
+/* Une slide = un format 16:9 fixe, mis à l'échelle pour tenir dans la fenêtre.
+   Même boîte à l'écran et à l'impression : ce qu'il voit est ce qui sort en PDF. */
+.slide{width:1280px;height:720px;flex:none;background:var(--noir);color:var(--creme);
+ position:relative;overflow:hidden;padding:76px 88px;display:flex;flex-direction:column;
+ box-shadow:0 18px 60px rgba(0,0,0,.45);border:1px solid var(--ligne)}
+.scaler{width:100%;max-width:1280px}
+.fit{transform-origin:top center}
+
+.num{position:absolute;right:44px;bottom:34px;font-size:13px;color:#57524b;letter-spacing:.12em}
+.marque{position:absolute;left:88px;bottom:34px;font-size:13px;color:#57524b;letter-spacing:.18em;text-transform:uppercase}
+.eyebrow{font-size:13px;letter-spacing:.3em;text-transform:uppercase;color:var(--or);margin-bottom:26px}
+h1{font-family:var(--titre);font-size:92px;line-height:1.02;font-weight:700;letter-spacing:-.01em;max-width:17ch}
+h2{font-family:var(--titre);font-size:54px;line-height:1.08;font-weight:700;margin-bottom:16px;max-width:22ch}
+.lead{font-size:22px;line-height:1.55;color:var(--gris);max-width:62ch}
+.big{font-family:var(--titre);font-size:120px;line-height:1;font-weight:700;color:var(--creme)}
+
+.cols{display:grid;gap:34px;margin-top:auto}
+.c3{grid-template-columns:repeat(3,1fr)}
+.c2{grid-template-columns:1fr 1fr}
+.stat{border-top:2px solid var(--or);padding-top:20px}
+.stat>b{display:block;font-family:var(--titre);font-size:70px;line-height:1;font-weight:700;margin-bottom:12px}
+.stat p{font-size:17px;line-height:1.5;color:var(--creme)}
+.stat cite{display:block;margin-top:12px;font-size:12px;font-style:normal;color:#6d675f;line-height:1.45}
+
+.etapes{display:grid;grid-template-columns:repeat(4,1fr);gap:26px;margin-top:auto}
+.etape{border-top:1px solid var(--ligne);padding-top:20px}
+.etape span{display:inline-block;font-family:var(--titre);font-size:15px;color:var(--noir);background:var(--or);
+ width:30px;height:30px;line-height:30px;text-align:center;border-radius:50%;font-weight:700;margin-bottom:14px}
+.etape b{display:block;font-size:19px;margin-bottom:7px}
+.etape p{font-size:15px;line-height:1.5;color:var(--gris)}
+
+.pack{border:1px solid var(--ligne);border-radius:10px;padding:34px;display:flex;flex-direction:column;background:#100e0d}
+.pack.fort{border-color:var(--or)}
+.pack .tag{font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:var(--or);margin-bottom:14px}
+.pack h3{font-family:var(--titre);font-size:36px;font-weight:700;margin-bottom:4px}
+.pack .prix{font-family:var(--titre);font-size:52px;font-weight:700;margin-bottom:20px}
+.pack .prix small{font-size:19px;color:var(--gris);font-family:var(--sans);font-weight:400}
+ul{list-style:none;display:grid;gap:11px}
+ul li{position:relative;padding-left:26px;font-size:17px;line-height:1.5}
+ul li::before{content:"";position:absolute;left:0;top:9px;width:9px;height:9px;border-radius:50%;background:var(--vert)}
+ul.sobre li::before{background:var(--or)}
+
+.deux{display:grid;grid-template-columns:1.05fr .95fr;gap:52px;flex:1;align-items:center}
+.encart{border-left:3px solid var(--or);padding:6px 0 6px 24px;font-size:20px;line-height:1.55}
+.contact{display:grid;gap:9px;font-size:20px;margin-top:26px}
+.contact b{font-family:var(--titre);font-size:26px;font-weight:700}
+.contact a{color:var(--creme)}
+.parcours{font-size:17px;line-height:1.7;color:var(--gris)}
+
+.pied{margin-top:auto;font-size:14px;color:#6d675f;line-height:1.6;border-top:1px solid var(--ligne);padding-top:18px}
+
+@media print{
+ @page{size:1280px 720px;margin:0}
+ html,body{background:#0a0908;padding:0;gap:0;display:block}
+ .slide{box-shadow:none;border:0;break-after:page;page-break-after:always;margin:0}
+ .slide:last-child{break-after:auto;page-break-after:auto}
+ .fit{transform:none !important}
+ .noprint{display:none !important}
+}
+.noprint{max-width:1280px;width:100%;color:#8d8880;font-size:14px;line-height:1.6;
+ border:1px solid var(--ligne);border-radius:10px;padding:16px 20px;background:#0f0d0c}
+.noprint b{color:var(--creme)}
+</style>
+</head>
+<body>
+
+<div class="noprint">Document commercial Oligart Agency — 8 pages. <b>Pour l'enregistrer en PDF :</b> Cmd+P (ou Ctrl+P) → Destination « Enregistrer au format PDF » → décocher les en-têtes et pieds de page, activer les graphiques d'arrière-plan.</div>
+
+<!-- 1 — Couverture -->
+<section class="slide">
+ <p class="eyebrow">Oligart Agency · Offre 2026</p>
+ <h1>Un site qui tient debout sur un téléphone.</h1>
+ <p class="lead" style="margin-top:30px">Refonte de site pour TPE et PME, avec diagnostic et maquette avant tout engagement.<br>Et, si vous le voulez, le trafic qui va avec.</p>
+ <div class="pied" style="margin-top:auto">
+  Rodolph Menten · Oligart Agency · oligart-agency.com · +33 6 88 35 46 76
+ </div>
+ <span class="marque">Oligart</span><span class="num">1 / 8</span>
+</section>
+
+<!-- 2 — Le constat -->
+<section class="slide">
+ <p class="eyebrow">Le constat</p>
+ <h2>Le problème n'est presque jamais le design.</h2>
+ <p class="lead">C'est que le site a été fait pour un écran d'ordinateur, il y a quelques années, et que plus personne ne le regarde comme ça.</p>
+ <div class="cols c3">
+  <div class="stat"><b>47 %</b><p>du trafic web en France se fait depuis un mobile ou une tablette.</p>
+   <cite>Statcounter Global Stats, France, août 2026 (mobile 44,59 % + tablette 2,43 %).</cite></div>
+  <div class="stat"><b>+8,4 %</b><p>de conversions sur un site marchand pour <b>0,1 seconde</b> de chargement gagnée.</p>
+   <cite>Deloitte pour Google, « Milliseconds Make Millions », 37 marques, 30 M de sessions.</cite></div>
+  <div class="stat"><b>78 %</b><p>des dirigeants de TPE-PME estiment que le numérique leur apporte de vrais bénéfices.</p>
+   <cite>Baromètre France Num 2025, economie.gouv.fr.</cite></div>
+ </div>
+ <span class="marque">Oligart</span><span class="num">2 / 8</span>
+</section>
+
+<!-- 3 — La méthode -->
+<section class="slide">
+ <p class="eyebrow">Ma méthode</p>
+ <h2>Je vous montre le travail avant de vous demander quoi que ce soit.</h2>
+ <div class="deux">
+  <div>
+   <p class="lead" style="margin-bottom:26px">Avant le premier échange, j'ai déjà ouvert votre site, mesuré ce qui cloche et dessiné ce qu'il pourrait être.</p>
+   <ul class="sobre">
+    <li><b>Un diagnostic chiffré</b>, en ligne, gratuit : trois problèmes mesurés sur votre page d'accueil, avec la méthode de mesure indiquée.</li>
+    <li><b>Une maquette</b> de votre site refait, en ligne, avec vos produits, vos couleurs et votre ton.</li>
+    <li><b>Aucun engagement</b> : si ça ne vous parle pas, vous gardez le diagnostic et on en reste là.</li>
+   </ul>
+  </div>
+  <div class="encart">« Je ne mesure que ce que je peux montrer. Chaque chiffre du diagnostic est reproductible sur votre propre site, depuis votre propre navigateur. »</div>
+ </div>
+ <span class="marque">Oligart</span><span class="num">3 / 8</span>
+</section>
+
+<!-- 4 — Pack Site -->
+<section class="slide">
+ <p class="eyebrow">Formule 1</p>
+ <h2>Pack Site</h2>
+ <div class="deux" style="align-items:stretch">
+  <div class="pack">
+   <p class="tag">Le site, refait</p>
+   <h3>Pack Site</h3>
+   <p class="prix">500 € <small>HT</small></p>
+   <ul>
+    <li>Une page, ou jusqu'à cinq pages</li>
+    <li>Conçu pour le téléphone d'abord</li>
+    <li>Titre, description et balises propres pour Google</li>
+    <li>Téléphone et e-mail cliquables</li>
+    <li>Images compressées et chargées à la demande</li>
+    <li>Mise en ligne comprise</li>
+   </ul>
+   <p class="pied" style="margin-top:auto;border:0;padding-top:22px;color:#8d8880">Livré en <b style="color:var(--creme)">10 jours ouvrés</b> à partir de la validation de la maquette.</p>
+  </div>
+  <div>
+   <p class="lead" style="margin-bottom:24px">C'est la formule pour qui a déjà ses clients et veut simplement arrêter d'en perdre à cause du site.</p>
+   <p class="lead">Vous avez vu la maquette avant de dire oui. Ce qui est livré est ce qui a été montré.</p>
+   <p class="encart" style="margin-top:32px">Acompte de 50 % à la signature, solde à la livraison.</p>
+  </div>
+ </div>
+ <span class="marque">Oligart</span><span class="num">4 / 8</span>
+</section>
+
+<!-- 5 — Pack Site + Trafic -->
+<section class="slide">
+ <p class="eyebrow">Formule 2</p>
+ <h2>Pack Site + Trafic</h2>
+ <div class="deux" style="align-items:stretch">
+  <div class="pack fort">
+   <p class="tag">Le site, et les visiteurs</p>
+   <h3>Pack Site + Trafic</h3>
+   <p class="prix">3 500 € <small>HT</small></p>
+   <ul>
+    <li>Tout le Pack Site</li>
+    <li>Une campagne de diffusion sur des sites médias premium</li>
+    <li>Ciblage par zone géographique et par centre d'intérêt</li>
+    <li>Native, display, vidéo, audio et DOOH</li>
+    <li>Pilotage de la campagne et arbitrages en cours de route</li>
+    <li>Un compte rendu lisible, pas un export de plateforme</li>
+   </ul>
+  </div>
+  <div>
+   <p class="lead" style="margin-bottom:24px">Un site refait ne fait pas venir de monde tout seul. Cette formule règle les deux moitiés du problème en une fois.</p>
+   <p class="lead">Elle a du sens quand vous avez quelque chose à annoncer : une ouverture, une nouvelle collection, une saison qui démarre.</p>
+  </div>
+ </div>
+ <span class="marque">Oligart</span><span class="num">5 / 8</span>
+</section>
+
+<!-- 6 — La diffusion -->
+<section class="slide">
+ <p class="eyebrow">La diffusion</p>
+ <h2>Vos annonces sur des sites médias, pas n'importe où.</h2>
+ <p class="lead">L'achat se fait sur un inventaire sélectionné : des sites de presse et des médias thématiques identifiés, pas un réseau ouvert où l'annonce sort où elle peut.</p>
+ <div class="cols c3">
+  <div class="stat"><b>200+</b><p>supports médias premium accessibles à la diffusion.</p></div>
+  <div class="stat"><b>400+</b><p>segments d'audience pour cibler par profil et par intention.</p></div>
+  <div class="stat"><b>5</b><p>formats : native, display, vidéo, audio et affichage numérique extérieur.</p></div>
+ </div>
+ <p class="pied">Le ciblage géographique permet de concentrer la diffusion sur votre zone de chalandise réelle — une ville, un rayon autour d'un point de vente, un département.</p>
+ <span class="marque">Oligart</span><span class="num">6 / 8</span>
+</section>
+
+<!-- 7 — Déroulé -->
+<section class="slide">
+ <p class="eyebrow">Comment ça se passe</p>
+ <h2>Quatre étapes, et vous validez à chaque fois.</h2>
+ <p class="lead">Rien n'avance sans votre accord explicite à l'étape précédente.</p>
+ <div class="etapes">
+  <div class="etape"><span>1</span><b>Le diagnostic</b><p>Je mesure votre site et je vous envoie le rapport. Gratuit, sans contrepartie.</p></div>
+  <div class="etape"><span>2</span><b>La maquette</b><p>Vous voyez à quoi ressemblerait votre site refait, en ligne, avant tout devis.</p></div>
+  <div class="etape"><span>3</span><b>La production</b><p>10 jours ouvrés après votre validation. Vous relisez les textes avant la mise en ligne.</p></div>
+  <div class="etape"><span>4</span><b>La mise en ligne</b><p>Je livre le site en ligne et je vous remets la main sur tout : domaine, hébergement, accès.</p></div>
+ </div>
+ <p class="pied">Vous restez propriétaire du nom de domaine, de l'hébergement et des contenus. Aucun abonnement, aucun verrou.</p>
+ <span class="marque">Oligart</span><span class="num">7 / 8</span>
+</section>
+
+<!-- 8 — Qui / contact -->
+<section class="slide">
+ <p class="eyebrow">Qui vous parle</p>
+ <div class="deux">
+  <div>
+   <h2 style="margin-bottom:22px">Rodolph Menten</h2>
+   <p class="parcours">Quinze ans en direction commerciale et marketing dans l'AdTech et les médias : Country Manager chez Tagger Media, Head of Sales chez Upday (Axel Springer) et Time Out Paris, Head of France chez Car&nbsp;&amp;&nbsp;Classic.</p>
+   <p class="parcours" style="margin-top:18px">J'ai fondé Oligart pour faire la même chose à l'échelle des entreprises qui n'ont pas d'agence : structurer la présence en ligne, puis acheter le média qui l'alimente.</p>
+  </div>
+  <div>
+   <p class="lead" style="color:var(--creme);font-size:24px;margin-bottom:8px">Un quart d'heure suffit pour savoir si c'est votre sujet.</p>
+   <div class="contact">
+    <b>+33 6 88 35 46 76</b>
+    <a href="mailto:rodolph.menten@oligart.fr">rodolph.menten@oligart.fr</a>
+    <a href="https://oligart-agency.com/">oligart-agency.com</a>
+   </div>
+   <p class="pied" style="margin-top:34px">Oligart — SASU de conseil en stratégie commerciale, go-to-market et média.</p>
+  </div>
+ </div>
+ <span class="marque">Oligart</span><span class="num">8 / 8</span>
+</section>
+
+<script>
+// Les slides ont une taille fixe (1280×720) pour que l'écran et le PDF soient
+// identiques. À l'écran seulement, on les réduit pour qu'elles tiennent dans
+// la fenêtre, sans jamais les agrandir au-delà de leur taille réelle.
+(function(){
+ function ajuste(){
+  var dispo = Math.min(document.documentElement.clientWidth - 32, 1280);
+  var k = Math.min(1, dispo / 1280);
+  document.querySelectorAll('.slide').forEach(function(s){
+   s.classList.add('fit');
+   s.style.transform = k < 1 ? 'scale(' + k + ')' : '';
+   s.style.marginBottom = k < 1 ? (-(720 * (1 - k)) + 'px') : '';
+   s.style.marginLeft = s.style.marginRight = k < 1 ? (-(1280 * (1 - k) / 2) + 'px') : '';
+  });
+ }
+ ajuste();
+ window.addEventListener('resize', ajuste);
+ window.addEventListener('beforeprint', function(){
+  document.querySelectorAll('.slide').forEach(function(s){ s.style.transform=''; s.style.marginBottom=''; s.style.marginLeft=''; s.style.marginRight=''; });
+ });
+ window.addEventListener('afterprint', ajuste);
+})();
+</script>
+</body></html>
