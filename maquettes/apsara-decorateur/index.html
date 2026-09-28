@@ -22,17 +22,25 @@ header{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.97);border-
 .nav-l{display:none;gap:28px;font:14px/1 system-ui,sans-serif;letter-spacing:.08em;text-transform:uppercase}
 .nav-l a{text-decoration:none}
 .tel{font:600 15px/1 system-ui,sans-serif;text-decoration:none;white-space:nowrap}
-.hero{padding:70px 0 58px;background:var(--sable)}
+
+/* Hero en deux colonnes : la photo porte le sujet, le texte reste sur fond clair. */
+.hero{background:var(--sable)}
+.hero .wrap{display:grid;gap:34px;grid-template-columns:1fr;align-items:center;padding-top:56px;padding-bottom:56px}
 .hero .eyebrow{font:600 11px/1 system-ui,sans-serif;letter-spacing:.3em;color:var(--or);text-transform:uppercase;margin-bottom:22px}
-.hero h1{font-size:clamp(32px,6.5vw,58px);line-height:1.1;font-weight:400;max-width:16ch;margin-bottom:20px}
+.hero h1{font-size:clamp(32px,6.5vw,56px);line-height:1.1;font-weight:400;max-width:16ch;margin-bottom:20px}
 .hero p{color:var(--gris);max-width:48ch;margin-bottom:32px}
+.hero figure{margin:0;overflow:hidden}
+.hero figure img{width:100%;aspect-ratio:4/5;object-fit:cover}
 .cta{display:flex;gap:12px;flex-wrap:wrap}
+
 section{padding:62px 0}
 .bord{border-top:1px solid var(--ligne)}
 h2{font-size:clamp(24px,4vw,34px);font-weight:400;margin-bottom:10px}
 .sub{color:var(--gris);margin-bottom:34px;max-width:56ch}
 .grid{display:grid;gap:24px;grid-template-columns:1fr}
-.card .ph{aspect-ratio:3/4;background:linear-gradient(150deg,#ece3d6,#dcd2c2);display:flex;align-items:center;justify-content:center;color:var(--or);font:600 12px/1 system-ui,sans-serif;letter-spacing:.16em}
+.card figure{margin:0;aspect-ratio:3/4;overflow:hidden;background:#ece3d6}
+.card figure img{width:100%;height:100%;object-fit:cover;transition:transform .55s ease}
+.card:hover figure img{transform:scale(1.04)}
 .card h3{font-size:20px;font-weight:400;margin:16px 0 6px}
 .card p{font-size:15px;color:var(--gris)}
 .maisons{background:var(--sable)}
@@ -42,12 +50,15 @@ h2{font-size:clamp(24px,4vw,34px);font-weight:400;margin-bottom:10px}
 .adr h3{font-size:19px;font-weight:400;margin-bottom:12px}
 .adr dl dt{font:600 11px/1 system-ui,sans-serif;letter-spacing:.16em;color:var(--or);text-transform:uppercase;margin-top:14px}
 .adr dl dd{margin-top:4px}
-.bandeau{background:var(--encre);color:#fff;padding:56px 0;text-align:center}
-.bandeau h2{color:#fff}.bandeau p{color:#bdb4a8;margin-bottom:28px}
+.bandeau{position:relative;color:#fff;padding:72px 0;text-align:center;overflow:hidden}
+.bandeau img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0}
+.bandeau::after{content:"";position:absolute;inset:0;background:rgba(24,21,18,.74);z-index:1}
+.bandeau .wrap{position:relative;z-index:2}
+.bandeau h2{color:#fff}.bandeau p{color:#d8cfc3;margin-bottom:28px}
 .bandeau .btn-p{background:#fff;color:var(--encre)}
 footer{padding:36px 0;font:14px/1.7 system-ui,sans-serif;color:var(--gris);border-top:1px solid var(--ligne)}
 .mention{margin-top:22px;padding-top:16px;border-top:1px solid var(--ligne);font-size:12px;color:#a49c92}
-@media(min-width:760px){.nav-l{display:flex}.grid{grid-template-columns:repeat(3,1fr)}.adr{grid-template-columns:1fr 1fr}}
+@media(min-width:760px){.nav-l{display:flex}.grid{grid-template-columns:repeat(3,1fr)}.adr{grid-template-columns:1fr 1fr}.hero .wrap{grid-template-columns:1.05fr .95fr}}
 </style>
 </head>
 <body>
@@ -59,24 +70,30 @@ footer{padding:36px 0;font:14px/1.7 system-ui,sans-serif;color:var(--gris);borde
 </div></header>
 
 <div class="hero"><div class="wrap">
- <p class="eyebrow">Tapissier décorateur · Paris 16<sup>e</sup></p>
- <h1>Apsara imagine les décors de vie</h1>
- <p>Réfection de sièges, rideaux et têtes de lit sur mesure. Vingt-cinq ans d'atelier, deux showrooms dans le 16<sup>e</sup>, et les tissus des grandes maisons d'édition.</p>
- <div class="cta">
-  <a class="btn btn-p" href="tel:+33635352629">Prendre rendez-vous</a>
-  <a class="btn btn-s" href="#savoir">Voir le savoir-faire</a>
+ <div>
+  <p class="eyebrow">Tapissier décorateur · Paris 16<sup>e</sup></p>
+  <h1>Apsara imagine les décors de vie</h1>
+  <p>Réfection de sièges, rideaux et têtes de lit sur mesure. Vingt-cinq ans d'atelier, deux showrooms dans le 16<sup>e</sup>, et les tissus des grandes maisons d'édition.</p>
+  <div class="cta">
+   <a class="btn btn-p" href="tel:+33635352629">Prendre rendez-vous</a>
+   <a class="btn btn-s" href="#savoir">Voir le savoir-faire</a>
+  </div>
  </div>
+ <figure><img src="https://images.unsplash.com/photo-1506332088442-9e0024864f5d?auto=format&amp;fit=crop&amp;w=1000&amp;q=72" alt="Fauteuil au cadre en bois et garniture beige" width="1000" height="1250" fetchpriority="high"></figure>
 </div></div>
 
 <section id="savoir"><div class="wrap">
  <h2>Le sur-mesure, du siège au rideau</h2>
  <p class="sub">Chaque projet part d'une visite : on regarde la pièce, la lumière, l'usage. Le reste se décide avec les tissus en main.</p>
  <div class="grid">
-  <article class="card"><div class="ph">SIÈGES</div>
+  <article class="card">
+   <figure><img loading="lazy" width="800" height="1067" src="https://images.unsplash.com/photo-1601366533287-5ee4c763ae4e?auto=format&amp;fit=crop&amp;w=800&amp;q=70" alt="Fauteuil en cuir brun dans un intérieur clair"></figure>
    <h3>Réfection de sièges</h3><p>Fauteuils, chaises, canapés et banquettes. Garnissage traditionnel ou contemporain, finitions clouées, passementerie.</p></article>
-  <article class="card"><div class="ph">RIDEAUX</div>
+  <article class="card">
+   <figure><img loading="lazy" width="800" height="1067" src="https://images.unsplash.com/photo-1509644851169-2acc08aa25b5?auto=format&amp;fit=crop&amp;w=800&amp;q=70" alt="Rideaux clairs ouverts devant une fenêtre"></figure>
    <h3>Rideaux et voilages</h3><p>Confection sur mesure, doublures et thermiques, stores bateau, tringles et pose comprise.</p></article>
-  <article class="card"><div class="ph">CHAMBRE</div>
+  <article class="card">
+   <figure><img loading="lazy" width="800" height="1067" src="https://images.unsplash.com/photo-1637964034233-b9b1d3619535?auto=format&amp;fit=crop&amp;w=800&amp;q=70" alt="Salon avec fauteuil et fenêtre habillée"></figure>
    <h3>Têtes de lit et panneaux</h3><p>Têtes de lit capitonnées, panneaux japonais, couvre-lits et coussins assortis aux tissus choisis.</p></article>
  </div>
 </div></section>
@@ -102,16 +119,19 @@ footer{padding:36px 0;font:14px/1.7 system-ui,sans-serif;color:var(--gris);borde
  </div>
 </div></section>
 
-<div class="bandeau"><div class="wrap">
- <h2>Un projet en tête ?</h2>
- <p>Envoyez une photo du siège ou de la pièce, nous revenons vers vous avec une estimation.</p>
- <a class="btn btn-p" href="tel:+33635352629">06 35 35 26 29</a>
-</div></div>
+<div class="bandeau">
+ <img loading="lazy" width="1600" height="900" src="https://images.unsplash.com/photo-1761469194706-ca0ad26dc7e3?auto=format&amp;fit=crop&amp;w=1600&amp;q=66" alt="">
+ <div class="wrap">
+  <h2>Un projet en tête ?</h2>
+  <p>Envoyez une photo du siège ou de la pièce, nous revenons vers vous avec une estimation.</p>
+  <a class="btn btn-p" href="tel:+33635352629">06 35 35 26 29</a>
+ </div>
+</div>
 
 <footer><div class="wrap">
  <strong>Apsara</strong> — Tapissier décorateur, Paris 16<sup>e</sup><br>
  118 avenue Mozart · 168 avenue Victor Hugo · 06 35 35 26 29
- <p class="mention">Maquette de proposition Oligart Agency, non contractuelle. Les textes et références reprennent le site actuel d'Apsara ; les visuels sont des emplacements réservés.</p>
+ <p class="mention">Maquette de proposition Oligart Agency, non contractuelle. Les textes et références reprennent le site actuel d'Apsara. Les photographies sont des visuels d'illustration sous licence libre (Unsplash), destinés à être remplacés par vos propres réalisations.</p>
 </div></footer>
 
 </body></html>
