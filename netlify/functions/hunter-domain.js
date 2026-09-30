@@ -26,6 +26,28 @@ exports.handler = async function (event) {
   if (denied) return denied;
 
   const p = event.queryStringParameters || {};
+
+  // ?account=1 : état du compte Hunter (crédits consommés / disponibles).
+  // Sert à piloter la consommation avant de lancer un lot de recherches.
+  if (p.account) {
+    if (!process.env.HUNTER_API_KEY) return json(501, { error: "HUNTER_API_KEY non configurée sur Netlify." });
+    try {
+      const r = await fetch("https://api.hunter.io/v2/account?api_key=" + encodeURIComponent(process.env.HUNTER_API_KEY));
+      const data = await r.json();
+      if (!r.ok) return json(r.status, { error: (data.errors && data.errors[0] && data.errors[0].details) || "Erreur API Hunter" });
+      const d = data.data || {};
+      const req = d.requests || {};
+      return json(200, {
+        plan: d.plan_name || null,
+        reinitialisation: d.reset_date || null,
+        recherches: req.searches || null,
+        verifications: req.verifications || null,
+      });
+    } catch (e) {
+      return json(502, { error: e.message || "Hunter injoignable" });
+    }
+  }
+
   const domaine = String(p.domain || "").trim().toLowerCase().replace(/^www\./, "");
   if (!domaine) return json(400, { error: "Paramètre `domain` manquant." });
   if (!DOMAINE.test(domaine) || domaine.length > 253) {
